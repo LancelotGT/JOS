@@ -1,0 +1,38 @@
+#!/usr/bin/env python2
+
+import os
+import platform
+
+from utils import *
+
+ROOT  = os.path.dirname(__file__)
+# KFLAG = os.path.join(ROOT, "kflag.ko")
+
+def check_arch():
+    return platform.architecture()[0][0:2]
+
+def check_kernel():
+    return platform.release().split("-")[0]
+
+# TODO : USE THIS MODULE LATER
+# def check_packages():
+#     PKGS = []
+#
+#     for p in ["curl", "tee", "gdb", "gnuplot"]:
+#         try:
+#             out = subprocess.check_output("which %s" % p, shell=True)
+#             if len(out) > 0:
+#                 print("> %s available at %s" % (p, out.strip()))
+#         except subprocess.CalledProcessError as e:
+#             PKGS.append(p)
+#
+#     if len(PKGS) != 0:
+#         os.system("sudo apt-get -y install %s" % " ".join(PKGS))
+
+if __name__ == "__main__":
+
+    check_api_key()
+    kernel=check_kernel()
+    print("> kernel: %s" % kernel)
+    bit = check_arch()
+    print("> architecture: %s bit" % bit)

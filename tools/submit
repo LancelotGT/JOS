@@ -1,0 +1,46 @@
+#!/usr/bin/env python2
+
+import os
+import sys
+import tempfile
+import subprocess
+import string
+import optparse
+
+from utils import *
+
+def submit_file(user_file):
+    print "%s/upload/" % URL
+    print "%s" % user_file
+    print ("%s" % (get_api_key()))
+    html = curl("%s/upload" % (URL),
+                "-s", "-f",
+                "-F", "file=@%s" % user_file,
+                "-F", "key=%s" % get_api_key())
+    if html == "":
+        print("[!] failed to upload the write-up")
+        exit(1)
+
+    print("Sent OK\n")
+
+
+if __name__ == "__main__":
+    parser = optparse.OptionParser()
+    parser.add_option("-c", "--checkin",
+                      help="checkin", action="store_true",
+                      dest="checkin", default=False)
+    parser.add_option("-f", "--file",
+                      help="submit file", action="store_true",
+                      dest="user_file", default=None)
+
+    (opts, args) = parser.parse_args()
+
+    check_api_key()
+
+    if opts.checkin:
+        print("> checking in %s" % checkin())
+        exit(0)
+
+    if opts.user_file:
+        for e in args:
+            submit_file(e)
