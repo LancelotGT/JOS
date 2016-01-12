@@ -1,0 +1,8 @@
+Lab checkout
+============
+
+Each lab has its own branch. You can checks the labs as:
+ $ git branch -a
+
+For checking out a labN, do the following:
+ $ git checkout labN
