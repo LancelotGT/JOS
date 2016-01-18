@@ -1,0 +1,25 @@
+Exercise 3
+
+(1) The first 32-bit executed is
+
+mov $0x10,%ax
+
+in address 0x7c32. Two things cause the switching. The first is setting the %cro to be 1, which enables 32-bit protected mode. The second is the long jump instruction at 0x7c2d, which forces the processor to change code segment register %cs and work in 32 bit mode.
+
+(2) The last instruction of boot loader executed is to call entry function of kernel.
+
+0x7d61:      call   *0x10018
+
+The first instruction of kernel executed is
+
+0x10000c:    movw   $0x1234,0x472
+
+(3) The first instruction of kernel is located at physical address 0x10000c.
+
+(4) The boot loader first read the elf header of kernel. It first find the number of program segments from the elf header and then read the program segment one by one. When reading each segment, boot loader convert them into integer number of sectors due to sector granularity. Then it reads the sectors which corresponds to a program segment until reading all the program segments into memory. In this way the boot loader decides the number of sectors to load.
+
+Exercise 6
+
+(1) They are different because at the point when BIOS enters boot loader, there is nothing at 0x100000. When boot loader enters kernel, it already loads kernel into memory at 0x100000.
+
+(2) So the first 8 words is the first 32 bytes of the first loadable area in the ELF object obj/kern/kernel.
