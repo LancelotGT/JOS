@@ -38,7 +38,7 @@ Exercise 8
 
 2. The purpose of this code is to move the screen to next line if the last line is full. It first check whether the current position exceeds the size of the screen. If so, it uses memmove() to copy all the characters from the second line to the end to the first position in the screen buffer. Then it fills out the last line buffer with white character ' '. Finally, it moves the current cursor to the first position in the last line.
 
-3. 
+3.
 (1) Trace into the call to cprintf(), fmt is stored in the current stack pointer. It points to 0xf0101972, which points to the string "x %d, y %x, z %d\n". va points to the following 3 int arguments. It points to 0x4(%esp) and store the numbers 1, 3, 4 from top to down contiguously.
 
 (2) It first calls vcprintf(fmt, ap), where fmt = 0xf0101972, pointing to the formatted string and ap = 0xf010ffd4, pointing to number 1. Then it calls cons_putc() through cputchar() at kern/print.c, its argument is 120, which is the ascii value for 'x'. Then it calls cons_putc() again with value 32 to print the space " ". When it reaches "%d", it calls va_arg inside getint() to get the value and move ap to next int. Before the call, ap points to 0xf010ffd4. After the call, it points to 0xf010ffd8.
@@ -67,21 +67,21 @@ The stack frame looks like this:
 |   return addr.   |
 +------------------+
 |    saved ebp     |
-+------------------+       
-|    saved ebx     |       
 +------------------+
-|                  |       
-+------------------+ 
-|                  |       
-+------------------+       
-|                  |       
-+------------------+       
-|      arg2        |       
-+------------------+       
-|      arg1        |            
-+------------------+            
+|    saved ebx     |
++------------------+
+|                  |
++------------------+
+|                  |
++------------------+
+|                  |
++------------------+
+|      arg2        |
++------------------+
+|      arg1        |
++------------------+
 |
-v        
+v
 
 (2) The return instruction pointer points to the instruction after the call instruction because when it returns, it needs to continue from the point after the original call instruction. 
 

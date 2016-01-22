@@ -207,7 +207,7 @@ process_precision:
     case 'o':
       // Replace this with your code.
       num = getuint(&ap, lflag);
-      base = 8; 
+      base = 8;
       goto number;
 
     // pointer

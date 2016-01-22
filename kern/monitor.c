@@ -24,7 +24,8 @@ struct Command {
 static struct Command commands[] = {
   { "help",      "Display this list of commands",        mon_help       },
   { "info-kern", "Display information about the kernel", mon_infokern   },
-  { "backtrace", "Display a stack backtrace of the kernel", mon_backtrace  }, 
+  { "backtrace", "Display a stack backtrace of the kernel", mon_backtrace  },
+  { "setcolor", "Change the color for console output", mon_setcolor    }
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -64,7 +65,7 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
   uint32_t ebp = read_ebp();
   uint32_t eip, args[5];
   uint32_t cnt = 0;
-  
+
   cprintf("Stack backtrace:\n");
   while (ebp) {
     cnt++;
@@ -73,16 +74,16 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
     eip = *(uint32_t *)(ebp + 4);
     // get argments value from upper stack
     for (i = 0; i < 5; i++)
-        args[i] = *(uint32_t *)(ebp + 8 + i * 4); 
+        args[i] = *(uint32_t *)(ebp + 8 + i * 4);
     // get function name from symbol table
     struct Eipdebuginfo info;
     debuginfo_eip(eip, &info);
     offset = eip - info.eip_fn_addr;
 
     // print those stack info
-    cprintf("  ebp %08x  eip %08x  args %08x %08x %08x %08x %08x\n", 
-            ebp, eip, args[0], args[1], args[2], args[3], args[4]); 
-    cprintf("         %s:%d: %.*s+%d\n", info.eip_file, info.eip_line, 
+    cprintf("  ebp %08x  eip %08x  args %08x %08x %08x %08x %08x\n",
+            ebp, eip, args[0], args[1], args[2], args[3], args[4]);
+    cprintf("         %s:%d: %.*s+%d\n", info.eip_file, info.eip_line,
             info.eip_fn_namelen, info.eip_fn_name, offset);
     // next stack frame
     ebp = *(uint32_t *)ebp;
@@ -90,7 +91,42 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
   return 0;
 }
 
+int
+mon_setcolor(int argc, char **argv, struct Trapframe *tf)
+{
+  if (argc != 2) {
+    cprintf("usage: %s color\n", argv[0]);
+    return -1;
+  }
 
+  if (!strcmp(argv[1], "green"))
+      set_color(GREEN);
+  else if (!strcmp(argv[1], "cyan"))
+      set_color(CYAN);
+  else if (!strcmp(argv[1], "red"))
+      set_color(RED);
+  else if (!strcmp(argv[1], "magenta"))
+      set_color(MAGENTA);
+  else if (!strcmp(argv[1], "brown"))
+      set_color(BROWN);
+  else if (!strcmp(argv[1], "light_gray"))
+      set_color(LIGHT_GRAY);
+  else if (!strcmp(argv[1], "light_green"))
+      set_color(LIGHT_GREEN);
+  else if (!strcmp(argv[1], "light_cyan"))
+      set_color(LIGHT_CYAN);
+  else if (!strcmp(argv[1], "light_red"))
+      set_color(LIGHT_RED);
+  else if (!strcmp(argv[1], "light_magenta"))
+      set_color(LIGHT_MAGENTA);
+  else if (!strcmp(argv[1], "yellow"))
+      set_color(YELLOW);
+  else if (!strcmp(argv[1], "white"))
+      set_color(WHITE);
+  else cprintf("No such color./n");
+
+  return 0;
+}
 
 /***** Kernel monitor command interpreter *****/
 
