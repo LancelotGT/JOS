@@ -66,25 +66,25 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
   
   cprintf("Stack backtrace:\n");
   while (ebp) {
-      cnt++;
-      int i, offset;
-      // get value from address where eip is pushed on stack
-      eip = *(uint32_t *)(ebp + 4);
-      // get argments value from upper stack
-      for (i = 0; i < 5; i++)
-          args[i] = *(uint32_t *)(ebp + 8 + i * 4); 
-      // get function name from symbol table
-      struct Eipdebuginfo info;
-      debuginfo_eip(eip, &info);
-      offset = eip - info.eip_fn_addr;
+    cnt++;
+    int i, offset;
+    // get value from address where eip is pushed on stack
+    eip = *(uint32_t *)(ebp + 4);
+    // get argments value from upper stack
+    for (i = 0; i < 5; i++)
+        args[i] = *(uint32_t *)(ebp + 8 + i * 4); 
+    // get function name from symbol table
+    struct Eipdebuginfo info;
+    debuginfo_eip(eip, &info);
+    offset = eip - info.eip_fn_addr;
 
-      // print those stack info
-      cprintf("  ebp %08x  eip %08x  args %08x %08x %08x %08x %08x\n", 
-              ebp, eip, args[0], args[1], args[2], args[3], args[4]); 
-      cprintf("         %s:%d: %.*s+%d\n", info.eip_file, info.eip_line, 
-              info.eip_fn_namelen, info.eip_fn_name, offset);
-      // next stack frame
-      ebp = *(uint32_t *)ebp;
+    // print those stack info
+    cprintf("  ebp %08x  eip %08x  args %08x %08x %08x %08x %08x\n", 
+            ebp, eip, args[0], args[1], args[2], args[3], args[4]); 
+    cprintf("         %s:%d: %.*s+%d\n", info.eip_file, info.eip_line, 
+            info.eip_fn_namelen, info.eip_fn_name, offset);
+    // next stack frame
+    ebp = *(uint32_t *)ebp;
   }
   return 0;
 }
