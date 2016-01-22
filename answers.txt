@@ -50,3 +50,11 @@ If x86 were big endian, we need to set i = 0x726c6400. We don't need to change 5
 5. The number printed after "y=" is not specific because it depends on what is previously on the stack. The formatted string indicates that there are two integers to be printed. So vcprintfmt will increment ap by 4 and print whatever value there in decimal format. So we get a random value.
 
 6. Perhaps we need to change va_arg, such that it decrements the ap to get the next value, instead of incrementing.
+
+
+Exercise 9
+The kernel stack is initialized in the following instruction
+
+f0100034:   bc 00 00 11 f0          mov    $0xf0110000,%esp
+
+at virtual address 0xf0110000 and physical address 0x00110000. It reserves 64KB - size of kernel to be used as kernel stack. The end of this stack points to the last instruction of kernel executable.
