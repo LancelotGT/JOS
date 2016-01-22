@@ -58,3 +58,34 @@ The kernel stack is initialized in the following instruction
 f0100034:   bc 00 00 11 f0          mov    $0xf0110000,%esp
 
 at virtual address 0xf0110000 and physical address 0x00110000. It reserves 64KB - size of kernel to be used as kernel stack. The end of this stack points to the last instruction of kernel executable.
+
+Exercise 10
+(1) Each time test_backtrace is called, 8 32-bit words are pushed on the stack. The first word is the return address of this call, the second word is the saved ebp, the third one is the saved ebx. Then the stack top grows down by 20 bytes. Note that the last two words are filled by arg2 and arg1 for the next function call.
+
+The stack frame looks like this:
++------------------+
+|   return addr.   |
++------------------+
+|    saved ebp     |
++------------------+       
+|    saved ebx     |       
++------------------+
+|                  |       
++------------------+ 
+|                  |       
++------------------+       
+|                  |       
++------------------+       
+|      arg2        |       
++------------------+       
+|      arg1        |            
++------------------+            
+|
+v        
+
+(2) The return instruction pointer points to the instruction after the call instruction because when it returns, it needs to continue from the point after the original call instruction. 
+
+(3) We can't detect how many arguments are there because this information is not available by just examing the stack. We cannot distinguish if the address contains the functional arguments or other value pushed on stack. We can fix this by extract the eip_fn_arg from struct Eipdebuginfo and use it to determine the number of arguments.
+
+Exercise 12
+__STAB_* comes from the stab section of obj/kern/kernel ELF executable file. These stabs are compiled by gcc and put into the executable. Using extern keywords we can import those stabs from the executable and use those. 
