@@ -123,7 +123,7 @@ mon_setcolor(int argc, char **argv, struct Trapframe *tf)
       set_color(YELLOW);
   else if (!strcmp(argv[1], "white"))
       set_color(WHITE);
-  else cprintf("No such color./n");
+  else cprintf("No such color.\n");
 
   return 0;
 }

@@ -51,6 +51,15 @@ If x86 were big endian, we need to set i = 0x726c6400. We don't need to change 5
 
 6. Perhaps we need to change va_arg, such that it decrements the ap to get the next value, instead of incrementing.
 
+Challenge
+I add a static variable in console.c to control the current display color. I also have a function named setcolor in console.c to change this variable. I also have a hook mon_setcolor in monitor.c to interatively change the current color. 12 colors are supported. See console.h.
+
+For example, we can do the following to print text with different color to VGA display.
+
+set_color(GREEN);
+cprintf("This text should be green");
+set_color(YELLOW);
+cprintf("This text should be yellow");
 
 Exercise 9
 The kernel stack is initialized in the following instruction
