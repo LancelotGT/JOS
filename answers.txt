@@ -1,6 +1,20 @@
-Exercise 3
+## Exercise 3
 
-(1) The first 32-bit executed is
+Through a series of observations. The beginning of the for loop that reads the remaining sectors of the kernel is at
+
+7d47:   39 f3                   cmp    %esi,%ebx
+
+The end of the for loop is at
+
+7d5f:   eb e6                   jmp    7d47 <bootmain+0x3d>
+
+If %esi is above or equal to %ebx, that is, ph >= eph, the code will jump to
+
+7d61:   ff 15 18 00 01 00       call   *0x10018
+
+which calls the entry point of kernel.
+
+(1) The first 32-bit code executed is
 
 mov $0x10,%ax
 
@@ -16,15 +30,23 @@ The first instruction of kernel executed is
 
 (3) The first instruction of kernel is located at physical address 0x10000c.
 
-(4) The boot loader first read the elf header of kernel. It first find the number of program segments from the elf header and then read the program segment one by one. When reading each segment, boot loader convert them into integer number of sectors due to sector granularity. Then it reads the sectors which corresponds to a program segment until reading all the program segments into memory. In this way the boot loader decides the number of sectors to load.
+(4) The boot loader first read the elf header of kernel. It first find the number of program segments from the elf header and then read the program segments one by one. When reading each segment, boot loader converts them into integer number of sectors due to sector granularity. Then it reads the sectors until all the program segments are read into memory. In this way the boot loader decides the number of sectors to load.
 
-Exercise 6
+## Exercise 5
+
+The first instruction that will go wrong is
+
+ljmp    $PROT_MODE_CSEG, $protcseg
+
+Because the address of $protcseg will be generated in linking. If the link address and load address are different, it will jump to the wrong position.
+
+## Exercise 6
 
 (1) They are different because at the point when BIOS enters boot loader, there is nothing at 0x100000. When boot loader enters kernel, it already loads kernel into memory at 0x100000.
 
 (2) So the first 8 words is the first 32 bytes of the first loadable area in the ELF object obj/kern/kernel.
 
-Exercise 7
+## Exercise 7
 
 The first instruction that would fail is
 
@@ -32,27 +54,27 @@ The first instruction that would fail is
 
 It fails because there is no such high physical address at 0xf010002f if paging is not enabled.
 
-Exercise 8
+## Exercise 8
 
-1. The interface between kern/printf.c and kern/console.c is inc/stdio.h. Specifically console.c implement and export the void cputchar(char c) function. It is used by kern/printf.c to call lib/rintfmt.c to print each character to the VGA display and serial port.
+1. The interface between kern/printf.c and kern/console.c is inc/stdio.h. Specifically console.c implements and exports the void cputchar(char c) function. It is used by kern/printf.c to call lib/printfmt.c to print each character to the VGA display and serial port.
 
-2. The purpose of this code is to move the screen to next line if the last line is full. It first check whether the current position exceeds the size of the screen. If so, it uses memmove() to copy all the characters from the second line to the end to the first position in the screen buffer. Then it fills out the last line buffer with white character ' '. Finally, it moves the current cursor to the first position in the last line.
+2. The purpose of this code is to move the screen to next line if the last line is full. It first checks whether the current position exceeds the size of the screen. If so, it uses memmove() to copy all the characters from the second line to the end to the first position in the screen buffer. Then it fills out the last line buffer with white character ' '. Finally, it moves the current cursor to the first position in the last line.
 
 3.
-(1) Trace into the call to cprintf(), fmt is stored in the current stack pointer. It points to 0xf0101972, which points to the string "x %d, y %x, z %d\n". va points to the following 3 int arguments. It points to 0x4(%esp) and store the numbers 1, 3, 4 from top to down contiguously.
+(1) Trace into the call to cprintf(), fmt is stored in the current stack pointer. The stack pointer points to 0xf0101972, which points to the string "x %d, y %x, z %d\n". va points to the following 3 int arguments. It points to 0x4(%esp) and store the numbers 1, 3, 4 from top to down contiguously.
 
-(2) It first calls vcprintf(fmt, ap), where fmt = 0xf0101972, pointing to the formatted string and ap = 0xf010ffd4, pointing to number 1. Then it calls cons_putc() through cputchar() at kern/print.c, its argument is 120, which is the ascii value for 'x'. Then it calls cons_putc() again with value 32 to print the space " ". When it reaches "%d", it calls va_arg inside getint() to get the value and move ap to next int. Before the call, ap points to 0xf010ffd4. After the call, it points to 0xf010ffd8.
+(2) It first calls vcprintf(fmt, ap), where fmt = 0xf0101972, pointing to the formatted string and ap = 0xf010ffd4, pointing to number 1. Then it calls cons_putc() through cputchar() at kern/print.c. Its argument is 120, which is the ascii value for 'x'. Then it calls cons_putc() again with value 32 to print the space " ". When it reaches "%d", it calls va_arg inside getint() to get the value and move ap to next int. Before the call, ap points to 0xf010ffd4. After the call, it points to 0xf010ffd8.
 
-4.  The output is "He110 World". cprintf calls vcprintf with formatted string "H%x Wo%s". Then vcprintf calls vprintfmt to print each character, number or string. When it reaches '%x', it print the first argument in va_list in hex format. 57616 in hex is 0xe110. It prints e110, then we get "He110 Wo". When it reaches "%s", it treats the second paramter as (char *) and print it out. The second parameter points to an unsigned number 0x00646c72. Due to little endianess, it is stored as 72 6c 64 00, which corresponds to the ascii value of characters "rld".
+4.  The output is "He110 World". cprintf calls vcprintf with formatted string "H%x Wo%s". Then vcprintf calls vprintfmt to print each character, number or string. When it reaches '%x', it print the first argument in va_list in hex format. 57616 in hex is 0xe110. It prints e110, then we get "He110 Wo". When it reaches "%s", it treats the second paramter as (char *) and prints it out. The second parameter points to an unsigned number 0x00646c72. Due to little endianess, it is stored as 72 6c 64 00, which corresponds to the ascii value of characters "rld".
 
 If x86 were big endian, we need to set i = 0x726c6400. We don't need to change 57616 because it is always treated as integer. When we write and read 57616 in C program, the endianess would be automatically taken care by the ISA.
 
 5. The number printed after "y=" is not specific because it depends on what is previously on the stack. The formatted string indicates that there are two integers to be printed. So vcprintfmt will increment ap by 4 and print whatever value there in decimal format. So we get a random value.
 
-6. Perhaps we need to change va_arg, such that it decrements the ap to get the next value, instead of incrementing.
+6. We need to change the implementation of va_arg, such that it decrements the ap to get the next value, instead of incrementing.
 
-Challenge
-I add a static variable in console.c to control the current display color. I also have a function named setcolor in console.c to change this variable. I also have a hook mon_setcolor in monitor.c to interatively change the current color. 12 colors are supported. See console.h.
+## Challenge
+I added a static variable in console.c to control the current display color. I also have a function named setcolor in console.c to change this variable. I also have a hook named mon_setcolor in monitor.c to interatively change the current color. 12 colors are supported. See console.h.
 
 For example, we can do the following to print text with different color to VGA display.
 
@@ -61,14 +83,16 @@ cprintf("This text should be green");
 set_color(YELLOW);
 cprintf("This text should be yellow");
 
-Exercise 9
+## Exercise 9
 The kernel stack is initialized in the following instruction
 
+    # Set the stack pointer
+    movl    $(bootstacktop),%esp
 f0100034:   bc 00 00 11 f0          mov    $0xf0110000,%esp
 
 at virtual address 0xf0110000 and physical address 0x00110000. It reserves 64KB - size of kernel to be used as kernel stack. The end of this stack points to the last instruction of kernel executable.
 
-Exercise 10
+## Exercise 10
 (1) Each time test_backtrace is called, 8 32-bit words are pushed on the stack. The first word is the return address of this call, the second word is the saved ebp, the third one is the saved ebx. Then the stack top grows down by 20 bytes. Note that the last two words are filled by arg2 and arg1 for the next function call.
 
 The stack frame looks like this:
@@ -92,9 +116,9 @@ The stack frame looks like this:
 |
 v
 
-(2) The return instruction pointer points to the instruction after the call instruction because when it returns, it needs to continue from the point after the original call instruction. 
+(2) The return instruction pointer points to the instruction after the call instruction because when it returns, it needs to continue from the point after the original call instruction.
 
-(3) We can't detect how many arguments are there because this information is not available by just examing the stack. We cannot distinguish if the address contains the functional arguments or other value pushed on stack. We can fix this by extract the eip_fn_arg from struct Eipdebuginfo and use it to determine the number of arguments.
+(3) We can't detect how many arguments are there because this information is not available by just examing the stack. We cannot distinguish if the address contains the function arguments or other values pushed on stack. We can fix this by extract the eip_fn_arg from struct Eipdebuginfo and use it to determine the number of arguments.
 
-Exercise 12
-__STAB_* comes from the stab section of obj/kern/kernel ELF executable file. These stabs are compiled by gcc and put into the executable. Using extern keywords we can import those stabs from the executable and use those. 
+## Exercise 12
+__STAB_* comes from the stab section of obj/kern/kernel ELF executable file. These stabs are compiled by gcc and put into the executable. Using extern keywords we can import those stabs from the executable and use them.
