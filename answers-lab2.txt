@@ -1,0 +1,10 @@
+Exercise 3
+
+Question:
+
+mystery_t x;
+char* value = return_a_pointer();
+*value = 10;
+x = (mystery_t) value;
+
+The type of x should be uintptr_t. This is because the char* returned from return_a_pointer() is a virtual address. Only casting it to uintptr would make sense.

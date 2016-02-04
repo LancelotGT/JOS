@@ -127,7 +127,6 @@ mem_init(void)
   i386_detect_memory();
 
   // Remove this line when you're ready to test this function.
-  //panic("mem_init: This function is not finished\n");
 
   //////////////////////////////////////////////////////////////////////
   // create initial page directory.
@@ -292,7 +291,7 @@ page_alloc(int alloc_flags)
 {
   struct PageInfo* pp = page_free_list;
   if (pp) {
-    if (alloc_flags && ALLOC_ZERO)
+    if (alloc_flags & ALLOC_ZERO)
       memset(page2kva(pp), 0, PGSIZE);
     page_free_list = page_free_list->pp_link;
     pp->pp_link = NULL;
@@ -353,8 +352,33 @@ page_decref(struct PageInfo* pp)
 pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
-  // Fill this function in
-  return NULL;
+  uintptr_t paddr;
+  struct PageInfo *pp;
+  pte_t *pte, *ppte;
+  pde_t pde = pgdir[PDX(va)];
+
+  if (pde == 0) {
+    if (!create)
+      return NULL;
+    // no such page table page, so create one
+    pp = page_alloc(1);
+    if (!pp)
+      return NULL;
+    pp->pp_ref += 1;
+    paddr = (uintptr_t)page2pa(pp);
+    //memset((void *)vaddr, 0, PGSIZE);
+    // set up page directory entry
+    pgdir[PDX(va)] = paddr | PTE_W | PTE_P;
+
+    // pte points to the start of the second level page table,
+    // ppte points to the page table entry to be returned
+    pte = (pte_t *)KADDR(paddr);
+    ppte = pte + PTX(va);
+  } else {
+    pte = (pte_t *)KADDR(PTE_ADDR(pde));
+    ppte = pte + PTX(va);
+  }
+  return ppte;
 }
 
 //
@@ -371,7 +395,14 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 static void
 boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
-  // Fill this function in
+  // for every page until va + size, use pgdir_walk to find their pte addrs,
+  // map them to pa to pa + size and change the perm bits
+  for ( ; va + size / PGSIZE; va += PGSIZE) {
+    pte_t *pte = pgdir_walk(pgdir, (void *)va, 1);
+    assert(pte != NULL);
+    *pte = pa | perm;
+    pa += PGSIZE;
+  }
 }
 
 //
@@ -402,7 +433,21 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 int
 page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 {
-  // Fill this function in
+  physaddr_t pa = page2pa(pp);
+
+  pte_t* pte = pgdir_walk(pgdir, va, 1);
+  // pte allocation failed, return error bit
+  if (!pte)
+    return -E_NO_MEM;
+
+  // remove the old page if something is there
+  if (*pte)
+      page_remove(pgdir, va);
+
+  pp->pp_ref += 1;
+  *pte = pa | perm | PTE_P;
+  // va formerly used, so flush the TLB
+  tlb_invalidate(pgdir, va);
   return 0;
 }
 
@@ -420,8 +465,16 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 struct PageInfo *
 page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 {
-  // Fill this function in
-  return NULL;
+  pte_t* pte = pgdir_walk(pgdir, va, 0);
+  if (!pte)
+    return NULL;
+
+  // if pte_store is not NULL, store the pte addr there
+  if (pte_store)
+      *pte_store = (pte_t *)pte;
+
+  physaddr_t pa = PTE_ADDR(*pte);
+  return pa2page(pa);
 }
 
 //
@@ -442,7 +495,13 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 void
 page_remove(pde_t *pgdir, void *va)
 {
-  // Fill this function in
+  pte_t *clear;
+  struct PageInfo *pp = page_lookup(pgdir, va, &clear);
+  if (pp) {
+    page_decref(pp);
+    *clear = 0;
+    tlb_invalidate(pgdir, va);
+  }
 }
 
 //
@@ -688,6 +747,12 @@ check_page(void)
   assert((pp1 = page_alloc(0)));
   assert((pp2 = page_alloc(0)));
 
+  if (pp0 == pp1)
+    panic("pp0 equals to pp1!\n");
+  else {
+    cprintf("pp0: %lx\n", pp0);
+    cprintf("pp1: %lx\n", pp1);
+  }
   assert(pp0);
   assert(pp1 && pp1 != pp0);
   assert(pp2 && pp2 != pp1 && pp2 != pp0);
@@ -708,6 +773,7 @@ check_page(void)
   // free pp0 and try again: pp0 should be used for page table
   page_free(pp0);
   assert(page_insert(kern_pgdir, pp1, 0x0, PTE_W) == 0);
+  cprintf("kern_pgdir[0]: %lx\n", PTE_ADDR(kern_pgdir[0]));
   assert(PTE_ADDR(kern_pgdir[0]) == page2pa(pp0));
   assert(check_va2pa(kern_pgdir, 0x0) == page2pa(pp1));
   assert(pp1->pp_ref == 1);
