@@ -1,6 +1,6 @@
 Exercise 3
 
-Question:
+Question 1
 
 mystery_t x;
 char* value = return_a_pointer();
@@ -8,3 +8,39 @@ char* value = return_a_pointer();
 x = (mystery_t) value;
 
 The type of x should be uintptr_t. This is because the char* returned from return_a_pointer() is a virtual address. Only casting it to uintptr would make sense.
+
+Question 2
+Entry   Base Virtual Address    Points to (logically)
+1023    0xffc00000              Page table for top 4MB of phys memory
+1022    0xff800000              Page table for second top 4MB of phy memory
+.       .                       .
+960     0xf0000000              Page table for first 4MB of phy memory
+959     0xefc00000              Page table for bootstack (second half not mapped)
+958     0xef800000              Page table for memory-mapped I/O
+957     0xef400000              Page table for second part of phy addr of pages
+956     0xef000000              Page table for phy addr of pages
+.       .                       Not mapped
+2       0x00800000              Not mapped
+1       0x00400000              Not mapped
+0       0x00000000              [see next question]
+
+Question 3
+The address above 0xef800000 is considered kernel memory. The user program cannot read kernel memory because the permission bit in the page table entry for kernel part of virtual address is PTE_P | PTE_W (kernel read / write). The mechanism to protect the kernel memory is page fault. If the user try to access kernel memory, the hardware will check the permission bit and current user/kernel level bit. If it does not match the permission bit, it will trigger a page fault and run the kernel fault handler.
+
+Question 4
+The maximum amount of physical memory that can be supported on JOS is 256 MB. This is because the KERNELBASE in JOS is 0xf0000000 and we can only map 256 MB physical memory to the address above KERNELBASE.
+
+Question 5
+The number of overhead for struct PageInfo is sizeof(struct PageInfo) * npages. If there are 256 MB memory, the size of overhead will be 512 KB. The number of overhead for page directory is 4KB. The number of overhead for page tables is 4096 KB. So the maximum space overhead is 512 + 4 + 4096 = 4612 KB.
+
+Question 6
+We transition to running at an EIP above KERNELBASE after the following instruction
+
+    jmp *%eax
+f010002d:   ff e0                   jmp    *%eax
+
+The value stored in %eax is 0xf010002f.
+
+It is possible to continue executing at low address after turning on paging because we also map the virtual address [0, 4MB) to physical address [0, 4MB). If we don't have this mapping in entry_pgdir.S, the MMU cannot execute the instruction jmp *%eax because it cannot translate the low address 0x10002d after the paging is on. Then the entire kernel will halt.
+
+The transition is necessary because the kernel expects it to be loaded at a high address and we cannot jump to a high address once we enter the c code.

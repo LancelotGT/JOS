@@ -367,7 +367,6 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
       return NULL;
     pp->pp_ref += 1;
     paddr = (uintptr_t)page2pa(pp);
-    //memset((void *)vaddr, 0, PGSIZE);
     // set up page directory entry
     pgdir[PDX(va)] = paddr | PTE_W | PTE_P | PTE_U;
 
