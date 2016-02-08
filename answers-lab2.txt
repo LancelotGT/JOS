@@ -1,6 +1,7 @@
-Exercise 3
+# Exercise 3
 
-Question 1
+
+## Question 1
 
 mystery_t x;
 char* value = return_a_pointer();
@@ -9,7 +10,8 @@ x = (mystery_t) value;
 
 The type of x should be uintptr_t. This is because the char* returned from return_a_pointer() is a virtual address. Only casting it to uintptr would make sense.
 
-Question 2
+
+## Question 2
 Entry   Base Virtual Address    Points to (logically)
 1023    0xffc00000              Page table for top 4MB of phys memory
 1022    0xff800000              Page table for second top 4MB of phy memory
@@ -24,16 +26,20 @@ Entry   Base Virtual Address    Points to (logically)
 1       0x00400000              Not mapped
 0       0x00000000              [see next question]
 
-Question 3
-The address above 0xef800000 is considered kernel memory. The user program cannot read kernel memory because the permission bit in the page table entry for kernel part of virtual address is PTE_P | PTE_W (kernel read / write). The mechanism to protect the kernel memory is page fault. If the user try to access kernel memory, the hardware will check the permission bit and current user/kernel level bit. If it does not match the permission bit, it will trigger a page fault and run the kernel fault handler.
 
-Question 4
+## Question 3
+The address above 0xef800000 is considered kernel memory. The user program cannot read kernel memory because the permission bit in the page table entry for kernel part of virtual address is PTE_P | PTE_W (kernel read / write). The mechanism to protect the kernel memory is page fault. If the user try to access kernel memory, the hardware will check the permission bit and current user/kernel level bit. If it does not match the permission bit, it will trigger a page fault and run the kernel page fault handler.
+
+
+## Question 4
 The maximum amount of physical memory that can be supported on JOS is 256 MB. This is because the KERNELBASE in JOS is 0xf0000000 and we can only map 256 MB physical memory to the address above KERNELBASE.
 
-Question 5
+
+## Question 5
 The number of overhead for struct PageInfo is sizeof(struct PageInfo) * npages. If there are 256 MB memory, the size of overhead will be 512 KB. The number of overhead for page directory is 4KB. The number of overhead for page tables is 4096 KB. So the maximum space overhead is 512 + 4 + 4096 = 4612 KB.
 
-Question 6
+
+## Question 6
 We transition to running at an EIP above KERNELBASE after the following instruction
 
     jmp *%eax
@@ -43,4 +49,48 @@ The value stored in %eax is 0xf010002f.
 
 It is possible to continue executing at low address after turning on paging because we also map the virtual address [0, 4MB) to physical address [0, 4MB). If we don't have this mapping in entry_pgdir.S, the MMU cannot execute the instruction jmp *%eax because it cannot translate the low address 0x10002d after the paging is on. Then the entire kernel will halt.
 
-The transition is necessary because the kernel expects it to be loaded at a high address and we cannot jump to a high address once we enter the c code.
+The transition is necessary because the kernel expects it to be loaded at a high address and we cannot jump to a high address without it once we enter the c code.
+
+
+# Challenge
+I implemented the challege 2 to extend the kernel monitor with showmappings, setpermission and memdump three commands.
+
+(1) showmappings can be used to display the physical page mappings and permission bits that apply to a particular range of virtual address. For example,
+
+K> showmappings 0xf0000000 0xf0003000
+Show mappings from 0xf0000000 to 0xf0003000
+    va  0xf0000000  pa  0x00000000 perm  PTE_P  1  PTE_W  2  PTE_U  0
+    va  0xf0001000  pa  0x00001000 perm  PTE_P  1  PTE_W  2  PTE_U  0
+    va  0xf0002000  pa  0x00002000 perm  PTE_P  1  PTE_W  2  PTE_U  0
+    va  0xf0003000  pa  0x00003000 perm  PTE_P  1  PTE_W  2  PTE_U  0
+
+(2) setpermission can be used to set, clear or change the permission bits of any mapping. For example,
+
+K> setpermission 0xf0000000 0x7
+Change permission at 0xf0000000
+    va  0xf0000000  pa  0x00000000 perm  PTE_P  1  PTE_W  2  PTE_U  4
+    previous perm  PTE_P  1  PTE_W  2  PTE_U  0
+
+(3) memdump can be used to dump the memory contents of a range of memory given a virtual address. For example,
+
+K> memdump 0xf0000000 0xf0000010
+Dump contents from va 0xf0000000 to va 0xf0000010
+    0xf0000000:    0xf000ff53
+    0xf0000001:    0x53f000ff
+    0xf0000002:    0xff53f000
+    0xf0000003:    0x00ff53f0
+    0xf0000004:    0xf000ff53
+    0xf0000005:    0xc3f000ff
+    0xf0000006:    0xe2c3f000
+    0xf0000007:    0x00e2c3f0
+    0xf0000008:    0xf000e2c3
+    0xf0000009:    0x53f000e2
+    0xf000000a:    0xff53f000
+    0xf000000b:    0x00ff53f0
+    0xf000000c:    0xf000ff53
+    0xf000000d:    0x53f000ff
+    0xf000000e:    0xff53f000
+    0xf000000f:    0x00ff53f0
+    0xf0000010:    0xf000ff53
+
+This completes the lab.

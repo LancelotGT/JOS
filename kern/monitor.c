@@ -29,7 +29,7 @@ static struct Command commands[] = {
   { "setcolor", "Change the color for console output", mon_setcolor    },
   { "showmappings", "Display the physical page mappings and permission bits that apply to particular range of virtual address", mon_showmappings},
   { "setpermission", "Set, clear or change the permission bits of any mapping", mon_setpermission},
-  { "memdump", "Dump the contents of a range of memory given either a virtual or physical address range", mon_memdump}
+  { "memdump", "Dump the contents of a range of memory given a virtual address range", mon_memdump}
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -172,7 +172,7 @@ mon_setpermission(int argc, char **argv, struct Trapframe *tf)
     return -1;
   }
   addr = ROUNDDOWN(strtol(argv[1], NULL, 16), PGSIZE);
-  perm = strtol(argv[1], NULL, 16);
+  perm = strtol(argv[2], NULL, 16);
 
   cprintf("Change permission at 0x%08x\n", addr);
   pte_t* pte = pgdir_walk(kern_pgdir, (void*)addr, 0);
@@ -180,11 +180,11 @@ mon_setpermission(int argc, char **argv, struct Trapframe *tf)
     cprintf("    va  0x%08x  pa  not mapped\n", addr);
   else {
     old_perm = *pte & 0xfff;
-    *pte = *pte & (~0xfff) & (perm & 0xfff);
+    *pte = (*pte & (~0xfff)) | (perm & 0xfff);
     cprintf("    va  0x%08x  pa  0x%08x perm  PTE_P  %x  PTE_W  %x  PTE_U  %x\n",
       addr, *pte & (~0xfff), *pte & PTE_P, *pte & PTE_W, *pte & PTE_U);
     cprintf("    previous perm  PTE_P  %x  PTE_W  %x  PTE_U  %x\n",
-      *pte & PTE_P, *pte & PTE_W, *pte & PTE_U);
+      old_perm & PTE_P, old_perm & PTE_W, old_perm & PTE_U);
   }
   return 0;
 }
