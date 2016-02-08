@@ -53,7 +53,7 @@ The transition is necessary because the kernel expects it to be loaded at a high
 
 
 # Challenge
-I implemented the challege 2 to extend the kernel monitor with showmappings, setpermission and memdump three commands.
+I implemented the challege 2 to extend the kernel monitor with showmappings, setpermission, vmemdump and pmemdump four commands.
 
 (1) showmappings can be used to display the physical page mappings and permission bits that apply to a particular range of virtual address. For example,
 
@@ -71,9 +71,9 @@ Change permission at 0xf0000000
     va  0xf0000000  pa  0x00000000 perm  PTE_P  1  PTE_W  2  PTE_U  4
     previous perm  PTE_P  1  PTE_W  2  PTE_U  0
 
-(3) memdump can be used to dump the memory contents of a range of memory given a virtual address. For example,
+(3) vmemdump can be used to dump the memory contents of a range of memory given a virtual address. For example,
 
-K> memdump 0xf0000000 0xf0000010
+K> vmemdump 0xf0000000 0xf0000010
 Dump contents from va 0xf0000000 to va 0xf0000010
     0xf0000000:    0xf000ff53
     0xf0000001:    0x53f000ff
@@ -93,4 +93,26 @@ Dump contents from va 0xf0000000 to va 0xf0000010
     0xf000000f:    0x00ff53f0
     0xf0000010:    0xf000ff53
 
-This completes the lab.
+(4) pmemdump is similar to vmemdump, except that it dumps memory of a physical address range. For example,
+
+K> pmemdump 0x100000 0x100010
+Dump contents from pa 0x00100000 to pa 0x00100010
+    0x00100000:    0x1badb002
+    0x00100001:    0x001badb0
+    0x00100002:    0x00001bad
+    0x00100003:    0x0000001b
+    0x00100004:    0x00000000
+    0x00100005:    0xfe000000
+    0x00100006:    0x4ffe0000
+    0x00100007:    0x524ffe00
+    0x00100008:    0xe4524ffe
+    0x00100009:    0x66e4524f
+    0x0010000a:    0xc766e452
+    0x0010000b:    0x05c766e4
+    0x0010000c:    0x7205c766
+    0x0010000d:    0x047205c7
+    0x0010000e:    0x00047205
+    0x0010000f:    0x00000472
+    0x00100010:    0x34000004
+
+This completes lab 2.

@@ -29,7 +29,8 @@ static struct Command commands[] = {
   { "setcolor", "Change the color for console output", mon_setcolor    },
   { "showmappings", "Display the physical page mappings and permission bits that apply to particular range of virtual address", mon_showmappings},
   { "setpermission", "Set, clear or change the permission bits of any mapping", mon_setpermission},
-  { "memdump", "Dump the contents of a range of memory given a virtual address range", mon_memdump}
+  { "vmemdump", "Dump the contents of a range of memory given a virtual address range", mon_vmemdump},
+  { "pmemdump", "Dump the contents of a range of memory given a physical address range", mon_pmemdump}
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -190,7 +191,7 @@ mon_setpermission(int argc, char **argv, struct Trapframe *tf)
 }
 
 int
-mon_memdump(int argc, char **argv, struct Trapframe *tf)
+mon_vmemdump(int argc, char **argv, struct Trapframe *tf)
 {
   extern pde_t *kern_pgdir;
   uintptr_t addr[2], i, j;
@@ -216,6 +217,28 @@ mon_memdump(int argc, char **argv, struct Trapframe *tf)
       cprintf("    0x%08x:    0x%08x\n", i, *(uint32_t*)i);
     }
   }
+  return 0;
+}
+
+int
+mon_pmemdump(int argc, char **argv, struct Trapframe *tf)
+{
+  uintptr_t addr[2], i;
+
+  if (argc != 3) {
+    cprintf("usage: %s addr1 addr2\n", argv[0]);
+    return -1;
+  }
+  addr[0] = strtol(argv[1], NULL, 16);
+  addr[1] = strtol(argv[2], NULL, 16);
+  if (addr[0] > addr[1]) {
+    cprintf("addr1 cannot be larger than addr2\n");
+    return -1;
+  }
+
+  cprintf("Dump contents from pa 0x%08x to pa 0x%08x\n", addr[0], addr[1]);
+  for (i = addr[0]; i <= addr[1]; i += 1)
+      cprintf("    0x%08x:    0x%08x\n", i, *(uint32_t*)KADDR(i));
   return 0;
 }
 /***** Kernel monitor command interpreter *****/
