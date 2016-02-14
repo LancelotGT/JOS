@@ -23,3 +23,13 @@ For each lab branch, I will finish all the exercises and do at least one challeg
 | Challenge 2   | Finished      | 02/06/2016 |
 | Challenge 3   | NA            | NA         |
 | Challenge 4   | NA            | NA         |
+
+## Lab 3: Memory Management
+
+| Requirement   | Status        | Date       |
+| ------------- | ------------- | -----------|
+| Part A        | Passed        | 02/14/2016 |
+| Part B        | NA            | NA         |
+| Challenge 1   | NA            | NA         |
+| Challenge 2   | NA            | NA         |
+| Challenge 3   | NA            | NA         |
