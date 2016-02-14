@@ -122,7 +122,8 @@ void
 mem_init(void)
 {
   uint32_t cr0;
-  size_t n;
+  size_t n, nmax = 0xffffffff;
+  pte_t* pte;
 
   // Find out how much memory the machine has (npages & npages_basemem).
   i386_detect_memory();
@@ -155,6 +156,8 @@ mem_init(void)
   //////////////////////////////////////////////////////////////////////
   // Make 'envs' point to an array of size 'NENV' of 'struct Env'.
   // LAB 3: Your code here.
+  envs = (struct Env *)boot_alloc(sizeof(struct Env) * NENV);
+  memset(envs, 0, sizeof(struct Env) * NENV);
 
   //////////////////////////////////////////////////////////////////////
   // Now that we've allocated the initial kernel data structures, we set
@@ -187,6 +190,8 @@ mem_init(void)
   //    - the new image at UENVS  -- kernel R, user R
   //    - envs itself -- kernel RW, user NONE
   // LAB 3: Your code here.
+  n = ROUNDUP(NENV*sizeof(struct Env), PGSIZE);
+  boot_map_region(kern_pgdir, UENVS, n, PADDR(envs), PTE_U | PTE_P);
 
   //////////////////////////////////////////////////////////////////////
   // Use the physical memory that 'bootstack' refers to as the kernel
@@ -208,8 +213,10 @@ mem_init(void)
   // We might not have 2^32 - KERNBASE bytes of physical memory, but
   // we just set up the mapping anyway.
   // Permissions: kernel RW, user NONE
-  n = (size_t)ROUNDDOWN((char*)(0xffffffff - KERNBASE), PGSIZE);
+  n = (size_t)ROUNDDOWN((char*)(nmax - KERNBASE), PGSIZE);
   boot_map_region(kern_pgdir, KERNBASE, n, 0, PTE_W | PTE_P);
+  pte = pgdir_walk(kern_pgdir, (void *)nmax, 1);
+  *pte = PADDR((void*)nmax) | PTE_W | PTE_P;
   // Check that the initial page directory has been set up correctly.
   check_kern_pgdir();
 
@@ -280,6 +287,7 @@ page_init(void)
   // spaces after pages[] are free
   kern_res = ROUNDUP((char *)PADDR(end), PGSIZE) + PGSIZE;
   kern_res = ROUNDUP(kern_res + sizeof(struct PageInfo) * npages, PGSIZE);
+  kern_res = ROUNDUP(kern_res + sizeof(struct Env) * NENV, PGSIZE);
 
   for (i = (uint32_t)kern_res / PGSIZE; i < npages; i++) {
     pages[i].pp_ref = 0;
