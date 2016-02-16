@@ -29,7 +29,7 @@ For each lab branch, I will finish all the exercises and do at least one challeg
 | Requirement   | Status        | Date       |
 | ------------- | ------------- | -----------|
 | Part A        | Passed        | 02/14/2016 |
-| Part B        | NA            | NA         |
-| Challenge 1   | NA            | NA         |
-| Challenge 2   | NA            | NA         |
+| Part B        | Passed        | 02/15/2016 |
+| Challenge 1   | Finished      | 02/15/2016 |
+| Challenge 2   | Finished      | 02/16/2016 |
 | Challenge 3   | NA            | NA         |
