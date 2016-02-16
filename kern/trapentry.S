@@ -63,17 +63,18 @@ TRAPHANDLER_NOEC(vector5, T_BOUND);
 TRAPHANDLER_NOEC(vector6, T_ILLOP);
 TRAPHANDLER_NOEC(vector7, T_DEVICE);
 TRAPHANDLER(vector8, T_DBLFLT);
-TRAPHANDLER_NOEC(vector9, T_GPFLT);
+TRAPHANDLER_NOEC(vector9, 9); // unused, just to fill the gap
 TRAPHANDLER(vector10, T_TSS);
 TRAPHANDLER(vector11, T_SEGNP);
 TRAPHANDLER(vector12, T_STACK);
 TRAPHANDLER(vector13, T_GPFLT);
 TRAPHANDLER(vector14, T_PGFLT);
-TRAPHANDLER(vector15, T_GPFLT);
+TRAPHANDLER(vector15, 15); // unused, just to fill the gap 
 TRAPHANDLER_NOEC(vector16, T_FPERR);
 TRAPHANDLER(vector17, T_ALIGN);
 TRAPHANDLER_NOEC(vector18, T_MCHK);
 TRAPHANDLER_NOEC(vector19, T_SIMDERR);
+TRAPHANDLER_NOEC(vector20, T_SYSCALL); 
 
 /*
  * Lab 3: Your code here for _alltraps
