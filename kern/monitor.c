@@ -12,6 +12,7 @@
 #include <kern/kdebug.h>
 #include <kern/trap.h>
 #include <kern/pmap.h>
+#include <kern/env.h>
 
 #define CMDBUF_SIZE 80 // enough for one VGA text line
 
@@ -31,7 +32,9 @@ static struct Command commands[] = {
   { "showmappings", "Display the physical page mappings and permission bits that apply to particular range of virtual address", mon_showmappings},
   { "setpermission", "Set, clear or change the permission bits of any mapping", mon_setpermission},
   { "vmemdump", "Dump the contents of a range of memory given a virtual address range", mon_vmemdump},
-  { "pmemdump", "Dump the contents of a range of memory given a physical address range", mon_pmemdump}
+  { "pmemdump", "Dump the contents of a range of memory given a physical address range", mon_pmemdump},
+  { "continue", "Continue execution from the current location if stops at a break point", mon_continue},
+  { "stepi", "single step execution of the current environment", mon_stepi}
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -242,6 +245,33 @@ mon_pmemdump(int argc, char **argv, struct Trapframe *tf)
       cprintf("    0x%08x:    0x%08x\n", i, *(uint32_t*)KADDR(i));
   return 0;
 }
+
+int mon_continue(int argc, char**argv, struct Trapframe *tf) {
+  if (!tf)
+    panic("No available environment to continue");
+  assert(tf->tf_trapno == T_BRKPT || tf->tf_trapno == T_DEBUG);
+
+  // if continue after doing single-step, we need to reset
+  // trap flag bit (#8 bit in eflags) to be 0
+  if (tf->tf_trapno == T_DEBUG)
+    tf->tf_eflags ^= (0x1 << 8);
+
+  // restore execution of suspended environment
+  env_run(curenv);
+  return 0;
+}
+
+int mon_stepi(int argc, char**argv, struct Trapframe *tf) {
+  if (!tf)
+    panic("No available environment to execute");
+  assert(tf->tf_trapno == T_BRKPT ||  tf->tf_trapno == T_DEBUG);
+  tf->tf_eflags |= (0x1 << 8);
+
+  // restore execution of suspended environment
+  env_run(curenv);
+  return 0;
+}
+
 /***** Kernel monitor command interpreter *****/
 
 #define WHITESPACE "\t\r\n "

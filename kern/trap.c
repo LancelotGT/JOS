@@ -172,8 +172,8 @@ trap_dispatch(struct Trapframe *tf)
     tf->tf_regs.reg_eax = ret;
     return;
   }
-  
-  if (tf->tf_trapno == T_BRKPT)
+
+  if (tf->tf_trapno == T_BRKPT || tf->tf_trapno == T_DEBUG)
     // does not return
     monitor(tf); 
 

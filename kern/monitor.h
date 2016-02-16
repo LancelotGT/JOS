@@ -21,5 +21,7 @@ int mon_showmappings(int argc, char **argv, struct Trapframe *tf);
 int mon_setpermission(int argc, char **argv, struct Trapframe *tf);
 int mon_vmemdump(int argc, char **argv, struct Trapframe *tf);
 int mon_pmemdump(int argc, char **argv, struct Trapframe *tf);
+int mon_continue(int argc, char **argv, struct Trapframe *tf);
+int mon_stepi(int argc, char **argv, struct Trapframe *tf);
 
 #endif  // !JOS_KERN_MONITOR_H
