@@ -3,7 +3,150 @@ What is the purpose of having an individual handler function for each exception/
 
 A: The purpose of this is to enforce kernel mode protection. We don't want the users to trigger certain handler functions since it will interfere with kernel. But we also want users to trigger certain interrupt handlers in order to make syscalls. So we have an individual handler function for each exception/interrupt and set different priviledges for them.
 
+
 ### Question 2
 Did you have to do anything to make the user/softint program behave correctly? The grade script expects it to produce a general protection fault (trap 13), but softint‘s code says int $14. Why should this produce interrupt vector 13? What happens if the kernel actually allows softint‘s int $14 instruction to invoke the kernel’s page fault handler (which is interrupt vector 14)?
 
 A: We did nothing to make softint program behave correctly. The `int 14` produces interrupt vector 13 because the DPL for page fault handler is 0 (kernel priviledge). So when CPU discovers that the user is calling `int 14`, it will trigger the general protection fault, which gives a trap number 13.
+
+
+### Question 3
+The break point test case will either generate a break point exception or a general protection fault depending on how you initialized the break point entry in the IDT (i.e., your call to SETGATE from trap_init). Why? How do you need to set it up in order to get the breakpoint exception to work as specified above and what incorrect setup would cause it to trigger a general protection fault?
+
+A: Because the way we initialized the break point entry in the IDT decides whether the user mode has priviledge to invoke the break point trap handler. We need set the DPL = 3 for break point trap handler to work correctly. If we set the DPL to be 0, the user does not have priviledge to invoke the trap handler and thus will lead to a general protection fault.
+
+
+### Question 4
+What do you think is the point of these mechanisms, particularly in light of what the user/softint test program does?
+
+A: These mechanisms enforces protection and prevents user from arbitrarily invoking certain interrupt handlers and interfering with kernel.
+
+
+### Exercise 9
+A: Kernel page fault happens because mon_backtrace keeps searching backwards using ebp and eventually dereference a pointer that is not on user stack.
+
+
+### Challenge 1
+
+I implemented a solution for challenge 1. The way I clean the code is generate an array for trap_init.c to use. I take advantage of .text and .data assembly label to switch between layouting code and data. For example, the TRAPHANDLER is rewritten as follows.
+
+ #define TRAPHANDLER(name, num)                                          \
+        .text;                                                          \
+        .globl name;            /* define global symbol for 'name' */   \
+        .type name, @function;  /* symbol type is function */           \
+        .align 2;               /* align function definition */         \
+        name:                   /* function starts here */              \
+        pushl $(num);                                                   \
+        jmp _alltraps;                                                  \
+        .data;                                                          \
+        .long name;
+
+We first use .text label to generate the code and then .data to export a .long symbol. Below, we use the label .data and export a global variable vectors. Then we can generate the vectors handler table like this
+
+.data
+.globl vectors
+vectors:
+TRAPHANDLER_NOEC(vector0, T_DIVIDE);
+TRAPHANDLER_NOEC(vector1, T_DEBUG);
+TRAPHANDLER_NOEC(vector2, T_NMI);
+
+The .long symbols defined in macro will be added to this global vectors. Then in trap_init(), we can just do
+
+  extern void (*vectors[])();
+  int i;
+
+  for (i = 0; i < 20; i++)
+    SETGATE(idt[i], 0, GD_KT, vectors[i], 0);
+  SETGATE(idt[1], 1, GD_KT, vectors[1], 0);
+  SETGATE(idt[3], 1, GD_KT, vectors[3], 3);
+  SETGATE(idt[4], 1, GD_KT, vectors[4], 0);
+  // interrupt handler for syscall
+  SETGATE(idt[48], 1, GD_KT, vectors[20], 3);
+
+to initialze the IDT instead of a whole lot SETGATE statements.
+
+
+### Challenge 2
+
+For challenge 2 kernel monitor continuing and single stepping, my solution is as follows.
+
+To continue to execute current environment, we only need to use env_run(curenv) to run the stopped environment. I add a monitor command mon_continue in monitor.c. It first make sure the trap number is T_BRKPT or T_DEBUG. Then it uses env_run(curenv) to continue execution.
+
+To implement single stepping, we know that if we turn on the #8 bit in EFLAGS, namely trap flag, the processor will enter single stepping mode. The processor will stop at every step and generates a T_DEBUG interrupt. I add a monitor command mon_stepi in monitor.c. It first makes sure the trapno is T_BRKPT or T_DEBUG. Then it set the #8 bit of tf->tf_eflags to 1 and continue execution of the current environment. I also need to reset the trap flag in mon_continue if the user wants to continue after single stepping.
+
+To demonstrate this, we first run the breakpoint user program.
+
+vagrant@vagrant-ubuntu-trusty-32:~/cs3210/lab$ make run-breakpoint-nox
+make[1]: Entering directory `/home/vagrant/cs3210/lab'
++ cc kern/init.c
++ ld obj/kern/kernel
++ mk obj/kern/kernel.img
+make[1]: Leaving directory `/home/vagrant/cs3210/lab'
+qemu-system-i386 -nographic -drive file=obj/kern/kernel.img,index=0,media=disk,format=raw -serial mon:stdio -gdb tcp::26000 -D qemu.log
+6828 decimal is 15254 octal!
+Physical memory: 66556K available, base = 640K, extended = 65532K
+check_page_alloc() succeeded!
+check_page() succeeded!
+check_kern_pgdir() succeeded!
+check_page_installed_pgdir() succeeded!
+[00000000] new env 00001000
+Incoming TRAP frame at 0xefffffbc
+Incoming TRAP frame at 0xefffffbc
+Welcome to the JOS kernel monitor!
+Type 'help' for a list of commands.
+TRAP frame at 0xf01a2000
+  edi  0x00000000
+  esi  0x00000000
+  ebp  0xeebfdfd0
+  oesp 0xefffffdc
+  ebx  0x00000000
+  edx  0x00000000
+  ecx  0x00000000
+  eax  0xeec00000
+  es   0x----0023
+  ds   0x----0023
+  trap 0x00000003 Breakpoint
+  err  0x00000000
+  eip  0x00800037
+  cs   0x----001b
+  flag 0x00000046
+  esp  0xeebfdfd0
+  ss   0x----0023
+K>
+
+After we turn on single-stepping,
+
+K> stepi
+Incoming TRAP frame at 0xefffffbc
+Welcome to the JOS kernel monitor!
+Type 'help' for a list of commands.
+TRAP frame at 0xf01a2000
+  edi  0x00000000
+  esi  0x00000000
+  ebp  0xeebfdff0
+  oesp 0xefffffdc
+  ebx  0x00000000
+  edx  0x00000000
+  ecx  0x00000000
+  eax  0xeec00000
+  es   0x----0023
+  ds   0x----0023
+  trap 0x00000001 Debug
+  err  0x00000000
+  eip  0x00800038
+  cs   0x----001b
+  flag 0x00000146
+  esp  0xeebfdfd4
+  ss   0x----0023
+K>
+
+Then we continue to execute,
+
+K> continue
+Incoming TRAP frame at 0xefffffbc
+[00001000] exiting gracefully
+[00001000] free env 00001000
+Destroyed the only environment - nothing more to do!
+Welcome to the JOS kernel monitor!
+Type 'help' for a list of commands.
+K>
