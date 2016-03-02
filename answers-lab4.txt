@@ -1,0 +1,3 @@
+Question 1
+
+The purpose of MPBOOTPHYS is to translate a linked address to where it is actually loaded. If we check the macro, s - mpentry_start is the code offset and MPENTRY_PADDR (0x7000) is where mpentry.S will be loaded. boot.S does not have this because it is linked at 0x7c00, where it will be loaded. If we don't have this in mpentry.S the code will gdt from a very high address above KERNELBASE and fail.
