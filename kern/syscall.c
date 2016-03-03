@@ -274,13 +274,16 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
   switch (syscallno) {
   case SYS_cputs:
     sys_cputs((const char*)a1, a2);
-    return 0; 
+    return 0;
   case SYS_cgetc:
     return sys_cgetc();
   case SYS_getenvid:
     return sys_getenvid();
   case SYS_env_destroy:
     return sys_env_destroy(a1);
+  case SYS_yield:
+    sys_yield();
+    return 0;
   default:
     return -E_INVAL;
   }
