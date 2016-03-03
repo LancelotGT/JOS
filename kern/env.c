@@ -372,6 +372,7 @@ load_icode(struct Env *e, uint8_t *binary)
       memset((void*)(ph->p_va + ph->p_filesz), 0, ph->p_memsz - ph->p_filesz);
     }
   }
+  lcr3(PADDR(kern_pgdir));
 
   // Now map one page for the program's initial stack
   // at virtual address USTACKTOP - PGSIZE.
@@ -522,8 +523,8 @@ env_run(struct Env *e)
   if (curenv) {
     if (curenv->env_status == ENV_RUNNING)
       curenv->env_status = ENV_RUNNABLE;
-    lcr3(PADDR(e->env_pgdir));
   }
+  lcr3(PADDR(e->env_pgdir));
   curenv = e;
   e->env_status = ENV_RUNNING;
   e->env_runs++;
