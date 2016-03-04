@@ -28,9 +28,8 @@ sched_yield(void)
         // no runnable environments, simply drop through to the code
         // below to halt the cpu.
 
-  // LAB 4: Your code here.
 
-  // if no current env, search from 0, else from the next env 
+  // if no current env, search from 0, else from the next env
   int this_id, i;
   if (curenv) {
     this_id = ENVX(curenv->env_id);
@@ -38,7 +37,7 @@ sched_yield(void)
   } else {
     this_id = i = 0;
   }
-  
+
   for ( ; i < NENV; i++) {
     if (envs[i].env_status == ENV_RUNNABLE) {
       // does not return

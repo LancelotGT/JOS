@@ -188,7 +188,7 @@ trap_dispatch(struct Trapframe *tf)
     // panic if page fault in kernel, panic
     if (!(tf->tf_cs >> 4))
       panic("trap_dispatch: page fault in kernel mode");
-    page_fault_handler(tf); 
+    page_fault_handler(tf);
     return;
   }
 
@@ -198,14 +198,14 @@ trap_dispatch(struct Trapframe *tf)
       tf->tf_regs.reg_ecx,
       tf->tf_regs.reg_ebx,
       tf->tf_regs.reg_edi,
-      tf->tf_regs.reg_esi); 
+      tf->tf_regs.reg_esi);
     tf->tf_regs.reg_eax = ret;
     return;
   }
 
   if (tf->tf_trapno == T_BRKPT || tf->tf_trapno == T_DEBUG)
     // does not return
-    monitor(tf); 
+    monitor(tf);
 
   // Handle spurious interrupts
   // The hardware sometimes raises these because of noise on the
