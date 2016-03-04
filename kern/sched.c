@@ -29,8 +29,16 @@ sched_yield(void)
         // below to halt the cpu.
 
   // LAB 4: Your code here.
-  int this_id = thiscpu->cpu_env ? ENVX(thiscpu->cpu_env->env_id) : 0;
-  int i = this_id + 1;
+
+  // if no current env, search from 0, else from the next env 
+  int this_id, i;
+  if (curenv) {
+    this_id = ENVX(curenv->env_id);
+    i = this_id + 1;
+  } else {
+    this_id = i = 0;
+  }
+  
   for ( ; i < NENV; i++) {
     if (envs[i].env_status == ENV_RUNNABLE) {
       // does not return
@@ -47,9 +55,9 @@ sched_yield(void)
     }
   }
 
-  if (thiscpu->cpu_env->env_status == ENV_RUNNING)
+  if (curenv && curenv->env_status == ENV_RUNNING)
     // does not return
-    env_run(thiscpu->cpu_env);
+    env_run(curenv);
 
   // no runnable env found
   // sched_halt never returns

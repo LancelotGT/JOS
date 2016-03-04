@@ -3,4 +3,12 @@ Question 1
 The purpose of MPBOOTPHYS is to translate a linked address to where it is actually loaded. If we check the macro, s - mpentry_start is the code offset and MPENTRY_PADDR (0x7000) is where mpentry.S will be loaded. boot.S does not have this because it is linked at 0x7c00, where it will be loaded. If we don't have this in mpentry.S the code will gdt from a very high address above KERNELBASE and fail.
 
 Question 2
-In some preemptive schedulers, the kernel is preemptive. Then the kernel will leave some tasks unfinished and registers pushed on kernel stack. In that case, sharing a kernel stack between different CPU will mess up each other since different CPUs are in different parts of kernel code. They do not always enter kernel through trap().
+Although the kernel lock can guarantee only one CPU is running kernel code, the hareware will automatically pushes registers on kernel stack before entering trap handler. So if different CPUs share a kernel stack and push things on stack at the same time. The stack will be corrupted.
+
+Question 3
+The pointer e can deference normally before and after changing page directory because it is on statically mapped address above KERNELBASE. The address translation will stay the same between different page directories.
+
+Question 4
+(1) We need to save the environment's old registers. So later when kernel resumes the environment, it can continue execution. 
+
+(2) After entering the trap handler, the kernel will saved all registers in the trapframe. Later before env_pop_tf(), the kernel pops all the saved old registers and switch to run the old environment.

@@ -385,6 +385,8 @@ load_icode(struct Env *e, uint8_t *binary)
     }
   }
 
+  lcr3(PADDR(kern_pgdir));
+
   // Now map one page for the program's initial stack
   // at virtual address USTACKTOP - PGSIZE.
   // LAB 3: Your code here.
@@ -393,7 +395,6 @@ load_icode(struct Env *e, uint8_t *binary)
     panic("load_icode: %e", -E_NO_MEM);
   stack_pte = pgdir_walk(e->env_pgdir, (void*)(USTACKTOP - PGSIZE), 1);
   *stack_pte = page2pa(pp) | PTE_P | PTE_U | PTE_W;
-  e->env_tf.tf_esp = USTACKTOP;
 
   // set the program entry point
   e->env_tf.tf_eip = elfhdr->e_entry;
@@ -508,8 +509,6 @@ env_pop_tf(struct Trapframe *tf)
 {
   // Record the CPU we are running on for user-space debugging
   curenv->env_cpunum = cpunum();
-
-  cprintf("prepare env %d cpu %d eip%x", curenv->env_id, cpunum(), tf->tf_eip);
   unlock_kernel();
   __asm __volatile("movl %0,%%esp\n"
                    "\tpopal\n"
@@ -550,8 +549,8 @@ env_run(struct Env *e)
   if (curenv) {
     if (curenv->env_status == ENV_RUNNING)
       curenv->env_status = ENV_RUNNABLE;
-    lcr3(PADDR(e->env_pgdir));
   }
+  lcr3(PADDR(e->env_pgdir));
   curenv = e;
   e->env_status = ENV_RUNNING;
   e->env_runs++;
