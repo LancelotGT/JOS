@@ -121,7 +121,7 @@ fork(void)
   for (i = 0; i < NPDENTRIES; i++) {
     for (j = 0; j < NPTENTRIES; j++) {
       pn = i * NPDENTRIES + j;
-      if (pn * PGSIZE < UTOP && uvpd[i] && uvpt[pn] 
+      if (pn * PGSIZE < UTOP && uvpd[i] && uvpt[pn]
         && (pn * PGSIZE != UXSTACKTOP - PGSIZE)) {
         if ((r = duppage(envid, pn)))
           cprintf("duppage: %e\n", r);

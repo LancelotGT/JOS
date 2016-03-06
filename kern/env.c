@@ -296,13 +296,8 @@ region_alloc(struct Env *e, void *va, size_t len)
 
   for (i = (uint32_t)ROUNDDOWN(va, PGSIZE); i < (uint32_t)ROUNDUP(va + len, PGSIZE); i += PGSIZE) {
     pp = page_alloc(0);
-    pte = pgdir_walk(e->env_pgdir, (void*)i, 1);
-    if (!pp || !pte) {
-      r = -E_NO_MEM;
-      panic("region_alloc: %e ", r);
-    }
-    assert(*pte == 0);
-    *pte = page2pa(pp) | PTE_U | PTE_P | PTE_W;
+    if ((r = page_insert(e->env_pgdir, pp, (void*)i, PTE_U | PTE_P | PTE_W)) < 0)
+      cprintf("page_insert: %e", r);
   }
 }
 
@@ -428,13 +423,11 @@ env_free(struct Env *e)
   pte_t *pt;
   uint32_t pdeno, pteno;
   physaddr_t pa;
-
   // If freeing the current environment, switch to kern_pgdir
   // before freeing the page directory, just in case the page
   // gets reused.
   if (e == curenv)
     lcr3(PADDR(kern_pgdir));
-
   // Note the environment's demise.
   cprintf("[%08x] free env %08x\n", curenv ? curenv->env_id : 0, e->env_id);
 
@@ -454,7 +447,6 @@ env_free(struct Env *e)
     for (pteno = 0; pteno <= PTX(~0); pteno++)
       if (pt[pteno] & PTE_P)
         page_remove(e->env_pgdir, PGADDR(pdeno, pteno, 0));
-
     // free the page table itself
     e->env_pgdir[pdeno] = 0;
     page_decref(pa2page(pa));

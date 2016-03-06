@@ -358,6 +358,7 @@ page_alloc(int alloc_flags)
       memset(page2kva(pp), 0, PGSIZE);
     page_free_list = page_free_list->pp_link;
     pp->pp_link = NULL;
+
     return pp;
   }
   return NULL;
