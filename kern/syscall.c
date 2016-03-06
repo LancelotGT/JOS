@@ -235,11 +235,7 @@ sys_page_map(envid_t srcenvid, void *srcva,
   // cannot map read-only page as writable
   if ((perm & PTE_W) && !(*ppte & PTE_W))
     return -E_INVAL;
-  cprintf("wowopage remap: %x ref: %d\n", page2kva(pp), pp->pp_ref);  
   ret = page_insert(e_dst->env_pgdir, pp, dstva, perm);
-  //if (srcva == dstva)
-  //  pp->pp_ref += 1;
-  cprintf("page remap: %x ref: %d\n", page2kva(pp), pp->pp_ref); 
   return ret;
 }
 

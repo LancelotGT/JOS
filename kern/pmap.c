@@ -335,17 +335,6 @@ page_init(void)
     pages[i].pp_link = page_free_list;
     page_free_list = &pages[i];
   }
-
-  struct PageInfo* temp = page_free_list;
-  while (temp) {
-    if (temp->pp_link && (uint32_t)page2kva(temp->pp_link) == 0xf03af000)
-      cprintf("free page va: %x\n", page2kva(temp)); 
-    if ((uint32_t)page2kva(temp) == 0xf03af000) {
-      cprintf("free page va: %x\n", page2kva(temp)); 
-      cprintf("free page va: %x\n", page2kva(temp->pp_link));  
-    }
-    temp = temp->pp_link;
-  }
 }
 
 //
@@ -363,15 +352,11 @@ page_init(void)
 struct PageInfo *
 page_alloc(int alloc_flags)
 {
-  if (page_free_list)
-    cprintf("before free list: %x", page2kva(page_free_list)); 
   struct PageInfo* pp = page_free_list;
   if (pp) {
     if (alloc_flags & ALLOC_ZERO)
       memset(page2kva(pp), 0, PGSIZE);
     page_free_list = page_free_list->pp_link;
-    if (page_free_list) 
-        cprintf("after free list: %x", page2kva(page_free_list));
     pp->pp_link = NULL;
     return pp;
   }
@@ -391,7 +376,6 @@ page_free(struct PageInfo *pp)
   if (pp->pp_ref || pp->pp_link)
       panic("page_free: Page reference is not zero\n");
   pp->pp_link = page_free_list;
-  cprintf("page to free: %x\n", page2kva(pp));
   page_free_list = pp;
 }
 
@@ -522,9 +506,7 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
   // increment ref count before page_remove to avoid page being
   // freed if the same pp->va is re-inserted
   pp->pp_ref += 1;
-  cprintf("pp->ref: %d\n", pp->pp_ref);
   // remove the old page if something is there
-  cprintf("PTE ADDR: %x\n", PTE_ADDR(*pte) + KERNBASE);
   if (*pte)
       page_remove(pgdir, va);
 
@@ -580,7 +562,6 @@ page_remove(pde_t *pgdir, void *va)
 {
   pte_t *clear;
   struct PageInfo *pp = page_lookup(pgdir, va, &clear);
-  cprintf("pp->ref: %d\n", pp->pp_ref);
   if (pp) {
     page_decref(pp);
     *clear = 0;
@@ -675,7 +656,6 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
   if (!pt || (uintptr_t)va >= ULIM || !(PGOFF(*pt) & perm)) {
       // if fault, set the report addr to be va
       user_mem_check_addr = (uintptr_t)va;
-      cprintf("address: %x permission: %x\n", va, PGOFF(*pt) & PTE_W);
       return -E_FAULT;
   }
 

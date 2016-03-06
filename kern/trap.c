@@ -335,10 +335,8 @@ page_fault_handler(struct Trapframe *tf)
 
   struct UTrapframe *utf;
 
-  if (!curenv->env_pgfault_upcall) {
-    cprintf("envid: %x handler: %x\n", curenv->env_id, curenv->env_pgfault_upcall);
+  if (!curenv->env_pgfault_upcall)
     goto destroy; 
-  }
 
   user_mem_assert(curenv, (void*)(UXSTACKTOP - PGSIZE), PGSIZE, PTE_P | PTE_W);
 

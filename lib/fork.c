@@ -14,14 +14,9 @@
 static void
 pgfault(struct UTrapframe *utf)
 {
-  cprintf("envid: %x\n", sys_getenvid());
-  cprintf("trap va %x\n", utf->utf_fault_va);
-  cprintf("trap eip %x\n", utf->utf_eip);
   void *addr = (void*)utf->utf_fault_va;
   uint32_t err = utf->utf_err;
   int r;
-  cprintf("fault stack: %x\n", &r);
-  assert((uintptr_t)&r >= UXSTACKTOP - PGSIZE && (uintptr_t)&r <= UXSTACKTOP);
 
   // Check that the faulting access was (1) a write, and (2) to a
   // copy-on-write page.  If not, panic.
@@ -29,8 +24,6 @@ pgfault(struct UTrapframe *utf)
   //   Use the read-only page table mappings at uvpt
   //   (see <inc/memlayout.h>).
 
-  cprintf("error code %x\n", utf->utf_err);
-  cprintf("COW: %x\n", (uvpt[(uint32_t)addr / PGSIZE] & PTE_COW));
   if (!(err & FEC_WR) || !(uvpt[(uint32_t)addr / PGSIZE] & PTE_COW))
     panic("pgfault: faulting access %e", err);
 
@@ -42,13 +35,9 @@ pgfault(struct UTrapframe *utf)
 
   if ((r = sys_page_alloc(0, PFTEMP, PTE_P|PTE_U|PTE_W)) < 0)
     panic("sys_page_alloc: %e", r);
-  cprintf("OK\n");
-  cprintf("mapped address %x %x\n", (uint32_t)addr, (uint32_t)addr / PGSIZE * PGSIZE);
   memmove(PFTEMP, (void*)((uint32_t)addr / PGSIZE * PGSIZE), PGSIZE);
-  cprintf("copy over\n");
   if ((r = sys_page_map(0, PFTEMP, 0, (void*)((uint32_t)addr / PGSIZE * PGSIZE), PTE_P|PTE_U|PTE_W)) < 0)
     panic("sys_page_map: %e", r);
-  cprintf("mark\n");
   if ((r = sys_page_unmap(0, PFTEMP)) < 0)
     panic("sys_page_unmap: %e", r);
 }
@@ -71,8 +60,6 @@ duppage(envid_t envid, unsigned pn)
 
   if (uvpt[pn] & PTE_W || uvpt[pn] & PTE_COW) {
 
-    if (pn * PGSIZE == USTACKTOP - PGSIZE)
-        cprintf("remap stack\n");
     if ((r = sys_page_map(0, (void*)(pn * PGSIZE), envid,
       (void*)(pn * PGSIZE), PTE_P | PTE_U | PTE_COW)) < 0)
         return r;
@@ -84,7 +71,6 @@ duppage(envid_t envid, unsigned pn)
 
   } else {
     // if it is a read-only page, just copy the mapping
-    //cprintf("mapped read-only pn addr %x\n", pn*PGSIZE);
     if ((r = sys_page_map(0, (void*)(pn * PGSIZE), envid,
       (void*)(pn * PGSIZE), uvpt[pn] & 0xfff)) < 0) {
       cprintf("sys_page_map failed\n");
@@ -135,16 +121,14 @@ fork(void)
   for (i = 0; i < NPDENTRIES; i++) {
     for (j = 0; j < NPTENTRIES; j++) {
       pn = i * NPDENTRIES + j;
-      if (pn * PGSIZE < UTOP && uvpd[i] && uvpt[pn]
-        && (pn * PGSIZE != UXSTACKTOP - PGSIZE)
-        ) {
+      if (pn * PGSIZE < UTOP && uvpd[i] && uvpt[pn] 
+        && (pn * PGSIZE != UXSTACKTOP - PGSIZE)) {
         if ((r = duppage(envid, pn)))
           cprintf("duppage: %e\n", r);
       }
     }
   }
 
-  cprintf("alloc exstack for envid: %x\n", envid);
   if ((r = sys_page_alloc(envid, (void*)(UXSTACKTOP - PGSIZE), PTE_P|PTE_U|PTE_W)) < 0)
     panic("sys_page_alloc: %e", r);
   if ((r = sys_page_map(envid, (void*)(UXSTACKTOP - PGSIZE), 0, PFTEMP, PTE_P|PTE_U|PTE_W)) < 0)
@@ -152,22 +136,6 @@ fork(void)
   memmove(PFTEMP, (void*)(UXSTACKTOP - PGSIZE), PGSIZE);
   if ((r = sys_page_unmap(0, PFTEMP)) < 0)
     panic("sys_page_unmap: %e", r);
-
-//  if ((r = sys_page_alloc(envid, (void*)(USTACKTOP - PGSIZE), PTE_P|PTE_U|PTE_W)) < 0)
-//    panic("sys_page_alloc: %e", r);
-//  if ((r = sys_page_map(envid, (void*)(USTACKTOP - PGSIZE), 0, PFTEMP, PTE_P|PTE_U|PTE_W)) < 0)
-//    panic("sys_page_map: %e", r);
-//  memmove(PFTEMP, (void*)(USTACKTOP - PGSIZE), PGSIZE);
-//  if ((r = sys_page_unmap(0, PFTEMP)) < 0)
-//    panic("sys_page_unmap: %e", r);
-
-  //if ((r = sys_page_alloc(envid, ROUNDDOWN((void*)pgfault, PGSIZE), PTE_P|PTE_U)) < 0)
-  //  panic("sys_page_alloc: %e", r);
-  //if ((r = sys_page_map(envid, ROUNDDOWN((void*)pgfault, PGSIZE), 0, PFTEMP, PTE_P|PTE_U)) < 0)
-  //  panic("sys_page_map: %e", r);
-  //memmove(PFTEMP, ROUNDDOWN((void*)pgfault, PGSIZE), PGSIZE);
-  //if ((r = sys_page_unmap(0, PFTEMP)) < 0)
-  //  panic("sys_page_unmap: %e", r);
 
   sys_env_set_pgfault_upcall(envid, thisenv->env_pgfault_upcall);
   sys_env_set_status(envid, ENV_RUNNABLE);

@@ -363,7 +363,6 @@ load_icode(struct Env *e, uint8_t *binary)
   struct Elf *elfhdr = (struct Elf*)binary;
   struct Proghdr *ph, *eph;
   struct PageInfo* pp;
-  pte_t *stack_pte;
 
   // switch the page directory
   lcr3(PADDR(e->env_pgdir));
@@ -393,9 +392,7 @@ load_icode(struct Env *e, uint8_t *binary)
   pp = page_alloc(0);
   if (!pp)
     panic("load_icode: %e", -E_NO_MEM);
-  page_insert(e->env_pgdir, pp, (void*)USTACKTOP - PGSIZE, PTE_P | PTE_U | PTE_W);
-  //stack_pte = pgdir_walk(e->env_pgdir, (void*)(USTACKTOP - PGSIZE), 1);
-  //*stack_pte = page2pa(pp) | PTE_P | PTE_U | PTE_W;
+  page_insert(e->env_pgdir, pp, (void*)(USTACKTOP - PGSIZE), PTE_P | PTE_U | PTE_W);
 
   // set the program entry point
   e->env_tf.tf_eip = elfhdr->e_entry;
