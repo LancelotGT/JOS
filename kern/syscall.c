@@ -165,7 +165,6 @@ sys_page_alloc(envid_t envid, void *va, int perm)
   //   parameters for correctness.
   //   If page_insert() fails, remember to free the page you
   //   allocated!
-
   struct PageInfo *pp;
   struct Env* e;
   int ret;
@@ -220,7 +219,6 @@ sys_page_map(envid_t srcenvid, void *srcva,
   if ((uint32_t)srcva >= UTOP || (uint32_t)dstva >= UTOP ||
     (uint32_t)srcva % PGSIZE || (uint32_t) dstva % PGSIZE)
     return -E_INVAL;
-
   if ((ret = envid2env(srcenvid, &e_src, 0)))
     return ret;
   if ((ret = envid2env(dstenvid, &e_dst, 0)))
@@ -237,8 +235,11 @@ sys_page_map(envid_t srcenvid, void *srcva,
   // cannot map read-only page as writable
   if ((perm & PTE_W) && !(*ppte & PTE_W))
     return -E_INVAL;
-
+  cprintf("wowopage remap: %x ref: %d\n", page2kva(pp), pp->pp_ref);  
   ret = page_insert(e_dst->env_pgdir, pp, dstva, perm);
+  //if (srcva == dstva)
+  //  pp->pp_ref += 1;
+  cprintf("page remap: %x ref: %d\n", page2kva(pp), pp->pp_ref); 
   return ret;
 }
 
