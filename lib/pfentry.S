@@ -82,11 +82,11 @@ _pgfault_upcall:
 	// modifies eflags.
 	// LAB 4: Your code here.
     add $4, %esp
+    sub $4, 0x4(%esp)        // correct saved esp since we pushed a eip 
     popfl
 
 	// Switch back to the adjusted trap-time stack.
 	// LAB 4: Your code here.
-    sub $4, (%esp)        // correct saved esp since we pushed an eip
     popl %esp
 
 	// Return to re-execute the instruction that faulted.

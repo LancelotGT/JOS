@@ -134,8 +134,10 @@ sys_env_set_pgfault_upcall(envid_t envid, void *func)
 {
   struct Env *e;
   int ret;
+
   if ((ret = envid2env(envid, &e, 1)))
     return ret;
+  user_mem_assert(e, func, PGSIZE, PTE_P | PTE_U | PTE_W);
   e->env_pgfault_upcall = func;
   return 0;
 }
@@ -228,6 +230,11 @@ sys_page_map(envid_t srcenvid, void *srcva,
   // srcva is not mapped
   if (!pp)
     return -E_INVAL;
+
+  // if pp->pp_ref is 0, something is wrong,
+  // probably doesn't manage reference count right
+  // when install and remove page mappings
+  assert(pp->pp_ref > 0);
 
   if (!(perm & PTE_U) || !(perm & PTE_P) || (perm & ~PTE_SYSCALL))
     return -E_INVAL;

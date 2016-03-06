@@ -338,7 +338,7 @@ page_fault_handler(struct Trapframe *tf)
   if (!curenv->env_pgfault_upcall)
     goto destroy; 
 
-  user_mem_assert(curenv, (void*)(UXSTACKTOP - PGSIZE), PGSIZE, PTE_P | PTE_W);
+  user_mem_assert(curenv, (void*)(UXSTACKTOP - 0x10), PGSIZE, PTE_P | PTE_U | PTE_W);
 
   if (tf->tf_esp <= UXSTACKTOP && tf->tf_esp >= UXSTACKTOP - PGSIZE) {
     if (tf->tf_esp - sizeof(struct UTrapframe) - 4 >= UXSTACKTOP - PGSIZE)
