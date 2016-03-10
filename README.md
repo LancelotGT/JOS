@@ -33,3 +33,11 @@ For each lab branch, I will finish all the exercises and do at least one challeg
 | Challenge 1   | Finished      | 02/15/2016 |
 | Challenge 2   | Finished      | 02/16/2016 |
 | Challenge 3   | NA            | NA         |
+
+## Lab 4: Preemptive Multitasking
+
+| Requirement   | Status        | Date       |
+| ------------- | ------------- | -----------|
+| Part A        | Passed        | 03/04/2016 |
+| Part B        | Passed        | 03/06/2016 |
+| Part C        | Passed        | 03/10/2016 |
