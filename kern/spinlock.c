@@ -82,6 +82,8 @@ spin_lock(struct spinlock *lk)
 void
 spin_unlock(struct spinlock *lk)
 {
+    if (!lk->cpu)
+        cprintf("lock: %x\n", lk->cpu);
 #ifdef DEBUG_SPINLOCK
   if (!holding(lk)) {
     int i;
