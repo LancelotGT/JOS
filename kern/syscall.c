@@ -90,6 +90,7 @@ sys_exofork(void)
   e->env_tf.tf_regs = curenv->env_tf.tf_regs;
   e->env_tf.tf_regs.reg_eax = 0;
   e->env_status = ENV_NOT_RUNNABLE;
+  e->priority = curenv->priority;
   e->env_tf.tf_eip = curenv->env_tf.tf_eip;
   e->env_tf.tf_esp = curenv->env_tf.tf_esp;
   return e->env_id;
@@ -120,6 +121,34 @@ sys_env_set_status(envid_t envid, int status)
   e->env_status = status;
   return 0;
 }
+
+// Set envid's env_status to status, which must be ENV_RUNNABLE
+// or ENV_NOT_RUNNABLE.
+//
+// Returns 0 on success, < 0 on error.  Errors are:
+//	-E_BAD_ENV if environment envid doesn't currently exist,
+//		or the caller doesn't have permission to change envid.
+//	-E_INVAL if status is not a valid status for an environment.
+static int
+sys_env_set_priority(envid_t envid, int priority)
+{
+  // Hint: Use the 'envid2env' function from kern/env.c to translate an
+  // envid to a struct Env.
+  // You should set envid2env's third argument to 1, which will
+  // check whether the current environment has permission to set
+  // envid's status.
+
+  struct Env *e;
+  int ret;
+  if ((ret = envid2env(envid, &e, 1)))
+    return ret;
+  if (e->env_status != ENV_RUNNABLE && e->env_status != ENV_NOT_RUNNABLE)
+    return -E_INVAL;
+  if (priority < 0 || priority > 99)
+    return -E_INVAL;
+  e->priority = priority;
+  return 0;
+} 
 
 // Set the page fault upcall for 'envid' by modifying the corresponding struct
 // Env's 'env_pgfault_upcall' field.  When 'envid' causes a page fault, the
@@ -407,6 +436,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
     return sys_exofork();
   case SYS_env_set_status:
     return sys_env_set_status(a1, a2);
+  case SYS_env_set_priority:
+    return sys_env_set_priority(a1, a2);
   case SYS_page_alloc:
     return sys_page_alloc(a1, (void*)a2, a3);
   case SYS_page_map:

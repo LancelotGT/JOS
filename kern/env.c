@@ -396,23 +396,27 @@ load_icode(struct Env *e, uint8_t *binary)
 
 //
 // Allocates a new env with env_alloc, loads the named elf
-// binary into it with load_icode, and sets its env_type.
+// binary into it with load_icode, and sets its env_type
+// and priority. The value of priority should be [0, 100).
 // This function is ONLY called during kernel initialization,
 // before running the first user-mode environment.
 // The new env's parent ID is set to 0.
 //
 void
-env_create(uint8_t *binary, enum EnvType type)
+env_create(uint8_t *binary, enum EnvType type, int priority)
 {
   // LAB 3: Your code here.
   struct Env* e;
   int r;
 
+  if (priority < 0 || priority > 99)
+    panic("env_create: invalid priority");
   r = env_alloc(&e, 0);
   if (r)
     panic("env_create: %e", r);
   load_icode(e, binary);
   e->env_type = type;
+  e->priority = priority;
 }
 
 //
