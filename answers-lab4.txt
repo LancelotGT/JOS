@@ -11,3 +11,52 @@ The pointer e can deference normally before and after changing page directory be
 (1) We need to save the environment's old registers. So later when kernel resumes the environment, it can continue execution.
 
 (2) After entering the trap handler, the kernel will form a trapframe by pushing all the registers and save the trapframe to curenv->env_tf in trap(). Later before env_pop_tf(), the kernel pops all the saved old registers and switch to run the old environment.
+
+### Challenge 1: priority scheduling
+
+I implemented a simple priority scheduler for JOS. The way to implement it is to add a field called priority in env_t struct. Then in env_create(), I added a third argument to set the environment priority in creation time. I also implemented a syscall sys_env_set_priority for a parent process to set priority to its forked child. Then in sched_yield(), the kernel does a linear scan on all envs looking for the one with max priority. If they have the same priorities, it uses round robin to choose among them.
+
+To demonstrate it, I added a user program called priorityfork.c based on dumbfork.c. In this program, the parent process with priority 0 forks a child and set its priority to be 99. So the parent will print stuff after all the child iterations. The output is
+
+[00000000] new env 00001000
+[00001000] new env 00001001
+0: I am the child!
+1: I am the child!
+2: I am the child!
+3: I am the child!
+4: I am the child!
+5: I am the child!
+6: I am the child!
+7: I am the child!
+8: I am the child!
+9: I am the child!
+10: I am the child!
+11: I am the child!
+12: I am the child!
+13: I am the child!
+14: I am the child!
+15: I am the child!
+16: I am the child!
+17: I am the child!
+18: I am the child!
+19: I am the child!
+[00001001] exiting gracefully
+[00001001] free env 00001001
+0: I am the parent!
+1: I am the parent!
+2: I am the parent!
+3: I am the parent!
+4: I am the parent!
+5: I am the parent!
+6: I am the parent!
+7: I am the parent!
+8: I am the parent!
+9: I am the parent!
+[00001000] exiting gracefully
+[00001000] free env 00001000
+No runnable environments in the system!
+
+### Challenge 2: sfork
+I implemented sfork by adding another function called sduppage(). sduppage takes in a flag cow as argument indicating whether the page should be a normal copy-on-write page or shared page. If it is cow, I mapped the page as PTE_COW, otherwise it is mapped as PTE_W. Then I mappped all pages as PTE_W except for user stack.
+
+However, my implementation for sfork() is not entirely working (I don't know how to make the thisenv working simulaneously for two environments). If the user program does not depends on thisenv, my implementation is working.

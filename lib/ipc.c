@@ -31,7 +31,7 @@ ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
       *from_env_store = 0;
     if (perm_store)
       *perm_store = 0;
-    return r;
+    panic("sys_ipc_recv: %e", r);
   }
 
   if (from_env_store)

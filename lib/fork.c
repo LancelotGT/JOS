@@ -72,7 +72,51 @@ duppage(envid_t envid, unsigned pn)
   } else {
     // if it is a read-only page, just copy the mapping
     if ((r = sys_page_map(0, (void*)(pn * PGSIZE), envid,
-      (void*)(pn * PGSIZE), uvpt[pn] & 0xfff)) < 0) {
+      (void*)(pn * PGSIZE), PGOFF(uvpt[pn]))) < 0) {
+      cprintf("sys_page_map failed\n");
+      return r;
+    }
+  }
+  return 0;
+}
+
+//
+// Map our virtual page pn (address pn*PGSIZE) into the target envid
+// at the same virtual address.  If the page is writable or copy-on-write,
+// the new mapping must be created copy-on-write, and then our mapping must be
+// marked copy-on-write as well.  (Exercise: Why do we need to mark ours
+// copy-on-write again if it was already copy-on-write at the beginning of
+// this function?)
+//
+// Returns: 0 on success, < 0 on error.
+// It is also OK to panic on error.
+//
+static int
+sduppage(envid_t envid, unsigned pn, int cow)
+{
+  int r;
+
+  if (uvpt[pn] & PTE_W || uvpt[pn] & PTE_COW) {
+
+    if (cow) {
+      if ((r = sys_page_map(0, (void*)(pn * PGSIZE), envid,
+      (void*)(pn * PGSIZE), PTE_P | PTE_U | PTE_COW)) < 0)
+        return r;
+
+      // set PTE_COW bit for pgtable
+      if ((r = sys_page_map(envid, (void*)(pn * PGSIZE), 0,
+        (void*)(pn * PGSIZE), PTE_P | PTE_U | PTE_COW)) < 0)
+          return r;
+    } else {
+      if ((r = sys_page_map(0, (void*)(pn * PGSIZE), envid,
+      (void*)(pn * PGSIZE), PTE_P | PTE_U | PTE_W)) < 0)
+        return r;
+    }
+
+  } else {
+    // if it is a read-only page, just copy the mapping
+    if ((r = sys_page_map(0, (void*)(pn * PGSIZE), envid,
+      (void*)(pn * PGSIZE), PGOFF(uvpt[pn]))) < 0) {
       cprintf("sys_page_map failed\n");
       return r;
     }
@@ -146,6 +190,50 @@ fork(void)
 int
 sfork(void)
 {
-  panic("sfork not implemented");
-  return -E_INVAL;
+  envid_t envid;
+  int r;
+  uint32_t i, j, pn;
+  extern volatile pte_t uvpt[];
+  extern volatile pde_t uvpd[];
+  extern char end[];
+  if (!thisenv->env_pgfault_upcall)
+    set_pgfault_handler(pgfault);
+
+  envid = sys_exofork();
+  if (envid < 0)
+    panic("sys_exofork: %e", envid);
+  if (envid == 0) {
+    // child process
+    thisenv = &envs[ENVX(sys_getenvid())];
+    return 0;
+  }
+
+  // parent process
+  for (i = 0; i < NPDENTRIES; i++) {
+    for (j = 0; j < NPTENTRIES; j++) {
+      pn = i * NPDENTRIES + j;
+      if (pn * PGSIZE < UTOP && uvpd[i] && uvpt[pn]
+        && (pn * PGSIZE != UXSTACKTOP - PGSIZE)
+        && (pn * PGSIZE != USTACKTOP - PGSIZE)) {
+        if ((r = sduppage(envid, pn, 0)))
+          cprintf("sduppage: %e\n", r);
+      }
+    }
+  }
+
+  // map stack page as COW
+  if ((r = sduppage(envid, (USTACKTOP - PGSIZE) / PGSIZE, 1)))
+     cprintf("sduppage: %e\n", r);
+
+  if ((r = sys_page_alloc(envid, (void*)(UXSTACKTOP - PGSIZE), PTE_P|PTE_U|PTE_W)) < 0)
+    panic("sys_page_alloc: %e", r);
+  if ((r = sys_page_map(envid, (void*)(UXSTACKTOP - PGSIZE), 0, PFTEMP, PTE_P|PTE_U|PTE_W)) < 0)
+    panic("sys_page_map: %e", r);
+  memmove(PFTEMP, (void*)(UXSTACKTOP - PGSIZE), PGSIZE);
+  if ((r = sys_page_unmap(0, PFTEMP)) < 0)
+    panic("sys_page_unmap: %e", r);
+
+  sys_env_set_pgfault_upcall(envid, thisenv->env_pgfault_upcall);
+  sys_env_set_status(envid, ENV_RUNNABLE);
+  return envid;
 }

@@ -20,6 +20,7 @@ umain(int argc, char **argv)
   }
 
   while (1) {
+    cprintf("%x prepare to recv from %x (thisenv is %p %x)\n", sys_getenvid(), who, thisenv, thisenv->env_id); 
     ipc_recv(&who, 0, 0);
     cprintf("%x got %d from %x (thisenv is %p %x)\n", sys_getenvid(), val, who, thisenv, thisenv->env_id);
     if (val == 10)
