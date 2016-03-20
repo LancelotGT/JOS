@@ -28,8 +28,30 @@ sched_yield(void)
         // no runnable environments, simply drop through to the code
         // below to halt the cpu.
 
-  // LAB 4: Your code here.
 
+  // if no current env, search from 0, else from the next env
+  int this, i, max = -1, index = -1;
+  this = curenv ? ENVX(curenv->env_id) + 1 : 0; 
+
+  for (i = 0 ; i < NENV; i++) {
+    if (envs[this].env_status == ENV_RUNNABLE &&
+      envs[this].priority > max) {
+      max = envs[this].priority;
+      index = this;
+    }
+    this = (this + 1) % NENV;
+  }
+
+  if (curenv && curenv->env_status == ENV_RUNNING &&
+    curenv->priority > max) {
+    max = curenv->priority;
+    index = ENVX(curenv->env_id);
+  } 
+
+  if (max != -1)
+    env_run(&envs[index]);
+
+  // no runnable env found
   // sched_halt never returns
   sched_halt();
 }

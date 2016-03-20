@@ -19,7 +19,6 @@ syscall(int num, int check, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
   // The last clause tells the assembler that this can
   // potentially change the condition codes and arbitrary
   // memory locations.
-
   asm volatile ("int %1\n"
                 : "=a" (ret)
                 : "i" (T_SYSCALL),
@@ -33,7 +32,6 @@ syscall(int num, int check, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 
   if (check && ret > 0)
     panic("syscall %d returned %d (> 0)", num, ret);
-
   return ret;
 }
 
@@ -97,6 +95,12 @@ int
 sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
 {
   return syscall(SYS_env_set_trapframe, 1, envid, (uint32_t)tf, 0, 0, 0);
+}
+
+int
+sys_env_set_priority(envid_t envid, int priority)
+{
+  return syscall(SYS_env_set_priority, 1, envid, priority, 0, 0, 0);
 }
 
 int

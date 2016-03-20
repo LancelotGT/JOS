@@ -11,6 +11,7 @@
 
 static void cons_intr(int (*proc)(void));
 static void cons_putc(int c);
+static unsigned int color; // an unsigned int hold the color value
 
 // Stupid I/O delay routine necessitated by historical PC design flaws
 static void
@@ -125,8 +126,6 @@ lpt_putc(int c)
 }
 
 
-
-
 /***** Text-mode CGA/VGA display output *****/
 
 static unsigned addr_6845;
@@ -140,6 +139,7 @@ cga_init(void)
   uint16_t was;
   unsigned pos;
 
+  color = 0x07;
   cp = (uint16_t*)(KERNBASE + CGA_BUF);
   was = *cp;
   *cp = (uint16_t)0xA55A;
@@ -167,8 +167,7 @@ static void
 cga_putc(int c)
 {
   // if no attribute given, then use black on white
-  if (!(c & ~0xFF))
-    c |= 0x0700;
+  c |= color << 8;
 
   switch (c & 0xff) {
   case '\b':
@@ -212,6 +211,11 @@ cga_putc(int c)
   outb(addr_6845 + 1, crt_pos);
 }
 
+void 
+set_color(unsigned int c)
+{
+    color = c;
+}
 
 /***** Keyboard input code *****/
 
