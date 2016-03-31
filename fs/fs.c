@@ -161,7 +161,7 @@ file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool all
              memset(diskaddr(f->f_indirect), 0, BLKSIZE);
            }
          }
-         *ppdiskbno = diskaddr(f->f_indirect) + filebno - NDIRECT;
+         *ppdiskbno = (uint32_t*)diskaddr(f->f_indirect) + filebno - NDIRECT;
        }
        return 0;
 }
@@ -376,7 +376,6 @@ file_read(struct File *f, void *buf, size_t count, off_t offset)
 		pos += bn;
 		buf += bn;
 	}
-
 	return count;
 }
 
