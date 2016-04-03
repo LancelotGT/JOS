@@ -114,7 +114,7 @@ sys_env_set_status(envid_t envid, int status)
 
   struct Env *e;
   int ret;
-  if ((ret = envid2env(envid, &e, 1)))
+  if ((ret = envid2env(envid, &e, 1)) < 0)
     return ret;
   if (e->env_status != ENV_RUNNABLE && e->env_status != ENV_NOT_RUNNABLE)
     return -E_INVAL;
@@ -135,7 +135,14 @@ sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
   // LAB 5: Your code here.
   // Remember to check whether the user has supplied us with a good
   // address!
-  panic("sys_env_set_trapframe not implemented");
+  struct Env *e;
+  int ret;
+  if ((ret = envid2env(envid, &e, 1)) < 0)
+    return ret;
+  user_mem_assert(curenv, tf, sizeof(struct Trapframe), PTE_U | PTE_P);
+  e->env_tf = *tf;
+  e->env_tf.tf_eflags |= FL_IF;
+  return 0;
 }
 
 // Set envid's priority to priority, which must be ENV_RUNNABLE
@@ -144,12 +151,6 @@ sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
 static int
 sys_env_set_priority(envid_t envid, int priority)
 {
-  // Hint: Use the 'envid2env' function from kern/env.c to translate an
-  // envid to a struct Env.
-  // You should set envid2env's third argument to 1, which will
-  // check whether the current environment has permission to set
-  // envid's status.
-
   struct Env *e;
   int ret;
   if ((ret = envid2env(envid, &e, 1)))
@@ -448,6 +449,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
     return sys_exofork();
   case SYS_env_set_status:
     return sys_env_set_status(a1, a2);
+  case SYS_env_set_trapframe:
+    return sys_env_set_trapframe(a1, (struct Trapframe*)a2);
   case SYS_env_set_priority:
     return sys_env_set_priority(a1, a2);
   case SYS_page_alloc:

@@ -58,6 +58,16 @@ duppage(envid_t envid, unsigned pn)
 {
   int r;
 
+  // if PTE_SHARE is set, just copy the mapping
+  if (uvpt[pn] & PTE_SHARE) {
+    if ((r = sys_page_map(0, (void*)(pn * PGSIZE), envid,
+      (void*)(pn * PGSIZE), uvpt[pn] & PTE_SYSCALL)) < 0) {
+      cprintf("sys_page_map failed: %e\n", r);
+      return r;
+    } 
+    return 0;
+  }
+
   if (uvpt[pn] & PTE_W || uvpt[pn] & PTE_COW) {
 
     if ((r = sys_page_map(0, (void*)(pn * PGSIZE), envid,
@@ -72,8 +82,8 @@ duppage(envid_t envid, unsigned pn)
   } else {
     // if it is a read-only page, just copy the mapping
     if ((r = sys_page_map(0, (void*)(pn * PGSIZE), envid,
-      (void*)(pn * PGSIZE), PGOFF(uvpt[pn]))) < 0) {
-      cprintf("sys_page_map failed\n");
+      (void*)(pn * PGSIZE), uvpt[pn] & PTE_SYSCALL)) < 0) {
+      cprintf("sys_page_map failed: %e\n", r); 
       return r;
     }
   }
