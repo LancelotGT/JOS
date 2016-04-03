@@ -13,6 +13,7 @@ enum {
   SYS_exofork,
   SYS_env_set_status,
   SYS_env_set_trapframe,
+  SYS_env_set_priority,
   SYS_env_set_pgfault_upcall,
   SYS_yield,
   SYS_ipc_try_send,
