@@ -24,7 +24,7 @@ For each lab branch, I will finish all the exercises and do at least one challeg
 | Challenge 3   | NA            | NA         |
 | Challenge 4   | NA            | NA         |
 
-## Lab 3: Memory Management
+## Lab 3: User Environments
 
 | Requirement   | Status        | Date       |
 | ------------- | ------------- | -----------|
@@ -43,3 +43,10 @@ For each lab branch, I will finish all the exercises and do at least one challeg
 | Part C        | Passed        | 03/10/2016 |
 | Challenge 1   | Finished      | 03/19/2016 |
 | Challenge 2   | Finished      | 03/19/2016 |
+
+## Lab 5: File system, Spawn and Shell
+| Requirement   | Status        | Date       |
+| ------------- | ------------- | -----------|
+| Part 1        | Passed        | 04/02/2016 |
+| Challenge 1   | NA            | NA         |
+| Challenge 2   | NA            | NA         |
