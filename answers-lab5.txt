@@ -1,0 +1,4 @@
+### Question 1
+Do you have to do anything else to ensure that this I/O privilege setting is saved and restored properly when you subsequently switch from one environment to another? Why?
+
+Answer: No. Before the CPU switches from the FS environment to kernel either via syscall or interupt, the hardware will automatically push EFLAGS register on kernel stack. Then kernel will save the EFLAGS register into trapframe. When later restoring the environment, the kernel will pop the environment trapframe and restore the registers including EFLAGS.
