@@ -229,6 +229,7 @@ trap_dispatch(struct Trapframe *tf)
   // LAB 4: Your code here.
   if (tf->tf_trapno == IRQ_OFFSET) {
     lapic_eoi();
+    time_tick();
     sched_yield(); // does not return
     panic("sched_yield failed");
   }
