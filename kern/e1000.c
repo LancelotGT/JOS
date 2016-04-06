@@ -30,20 +30,20 @@ int e1000_attach(struct pci_func *pcif)
     for (i = 0; i < NTDESC; i++) {
         tx_descs[i].addr = PADDR(&tx_packets[i * MAXPKTLEN]);
         tx_descs[i].cmd |= E1000_TXD_CMD_RS;
+        tx_descs[i].status |= E1000_TXD_STA_DD;
     }
 
     // test for transmitting packets in kernel space
-    int int_packet = 0x00000001;
-    e1000_tx(&int_packet, 4);
-    e1000_tx(&int_packet, 4);
-    e1000_tx(&int_packet, 4);
+    int int_packet[200];
+    for (i = 0; i < 5 * NTDESC; i++)
+        e1000_tx(&int_packet, 4 * 200);
     return 0;
 }
 
 int e1000_tx(void* addr, uint16_t length) {
-    int head = e1000[E1000_TDT], tail = e1000[E1000_TDT];
+    int tail = e1000[E1000_TDT];
 
-    if (head > tail && !(tx_descs[tail].status & E1000_TXD_STA_DD)) {
+    if (!(tx_descs[tail].status & E1000_TXD_STA_DD)) {
         // if the dd field is not set, the desc is not free
         // we simply drop the packet in this case
         cprintf("Transmit descriptors array is full\n");
@@ -52,6 +52,7 @@ int e1000_tx(void* addr, uint16_t length) {
 
     memmove(KADDR(tx_descs[tail].addr), addr, length);
     tx_descs[tail].length = length;
-    e1000[E1000_TDT] = ++tail;
+    tx_descs[tail].status &= ~E1000_TXD_STA_DD; 
+    e1000[E1000_TDT] = (tail + 1) % NTDESC;
     return 0;
 }
