@@ -25,14 +25,20 @@
 #define E1000_TCTL_NRTU   0x02000000    /* No Re-transmit on underrun */
 #define E1000_TCTL_MULR   0x10000000    /* Multiple request support */ 
 
+#define E1000_TXD_CMD_RS  0x08 /* Transmit Desc Report Status */ 
+#define E1000_TXD_STA_DD  0x1 /* Transmit Desc Status DD field */  
+
 #define E1000_TCTL_CT_INIT 0x00000010    /* initial collision threshold */  
 #define E1000_TCTL_COLD_INIT 0x00040000    /* initial collision distance */  
 #define E1000_TIPG_INIT 0x0060200a /* init values for TIPG in 13.4.34 */
 
 #define NTDESC 32 // the number of the transmit descriptors, somehow arbitrary
+#define MAXPKTLEN 1518
+
+volatile uint32_t *e1000; 
 
 int e1000_attach(struct pci_func *pcif); 
-volatile uint32_t *e1000;
+int e1000_tx(void* addr, uint16_t length);
 
 struct tx_desc
 {
