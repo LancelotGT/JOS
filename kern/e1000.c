@@ -35,12 +35,12 @@ int e1000_attach(struct pci_func *pcif)
     }
 
     // test for transmitting packets in kernel space
-    int int_packet[200];
+    //int int_packet[200];
 
-    for (i = 0; i < 200; i++)
-        int_packet[i] = i;
-    for (i = 0; i < 5 * NTDESC; i++)
-        e1000_tx(&int_packet, 4 * 200);
+    //for (i = 0; i < 200; i++)
+    //    int_packet[i] = i;
+    //for (i = 0; i < 5 * NTDESC; i++)
+    //    e1000_tx(&int_packet, 4 * 200);
     return 0;
 }
 
