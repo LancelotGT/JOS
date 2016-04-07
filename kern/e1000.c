@@ -1,5 +1,6 @@
 #include <kern/e1000.h>
 #include <inc/string.h>
+#include <inc/error.h>
 
 static struct tx_desc tx_descs[NTDESC];
 static char tx_packets[MAXPKTLEN * NTDESC];
@@ -46,6 +47,9 @@ int e1000_attach(struct pci_func *pcif)
 int e1000_tx(void* addr, uint16_t length) {
     int tail = e1000[E1000_TDT];
 
+    if (length > MAXPKTLEN)
+        return -E_INVAL;
+
     if (!(tx_descs[tail].status & E1000_TXD_STA_DD)) {
         // if the dd field is not set, the desc is not free
         // we simply drop the packet in this case
@@ -55,7 +59,7 @@ int e1000_tx(void* addr, uint16_t length) {
 
     memmove(KADDR(tx_descs[tail].addr), addr, length);
     tx_descs[tail].length = length;
-    tx_descs[tail].status &= ~E1000_TXD_STA_DD; 
+    tx_descs[tail].status &= ~E1000_TXD_STA_DD;
     tx_descs[tail].cmd |= E1000_TXD_CMD_EOP;
     e1000[E1000_TDT] = (tail + 1) % NTDESC;
     return 0;

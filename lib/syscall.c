@@ -126,3 +126,9 @@ sys_time_msec(void)
 {
   return (unsigned int)syscall(SYS_time_msec, 0, 0, 0, 0, 0, 0);
 }
+
+int
+sys_e1000_tx(void *s, size_t len)
+{
+  return syscall(SYS_e1000_tx, 0, (uint32_t)s, len, 0, 0, 0);
+} 

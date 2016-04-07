@@ -12,6 +12,7 @@
 #include <kern/console.h>
 #include <kern/sched.h>
 #include <kern/time.h>
+#include <kern/e1000.h>
 
 // Print a string to the system console.
 // The string is exactly 'len' characters long.
@@ -433,6 +434,17 @@ sys_time_msec(void)
   return time_msec();
 }
 
+// Transmit a packet located in s with length len
+static int
+sys_e1000_tx(void *s, size_t len)
+{
+  // Check that the user has permission to read memory [s, s+len).
+  // Destroy the environment if not.
+
+  user_mem_assert(curenv, s, len, PTE_U | PTE_P);
+  return e1000_tx((void*)s, len);
+} 
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -476,6 +488,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
     panic("sys_ipc_recv shouldn't return.");
   case SYS_time_msec:
     return sys_time_msec();
+  case SYS_e1000_tx:
+    return sys_e1000_tx((void*)a1, a2);
   default:
     return -E_INVAL;
   }
