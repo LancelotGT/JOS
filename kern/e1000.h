@@ -30,7 +30,9 @@
 #define E1000_RCTL_MO_0			0x00000000    /* multicast offset 11:0 */
 #define E1000_RCTL_BAM			0x00008000    /* broadcast enable */
 #define E1000_RCTL_SECRC		0x04000000    /* Strip Ethernet CRC */
-
+#define E1000_RCTL_BSEX			0x02000000    /* Buffer size extension */
+#define E1000_RCTL_SZ_4096      0x00030000    /* rx buffer size 4096 */
+#define E1000_RAH_AV			0x80000000    /* Receive descriptor valid */
 /* Transmit Control Registers */
 #define E1000_TCTL_RST    0x00000001    /* software reset */
 #define E1000_TCTL_EN     0x00000002    /* enable tx */

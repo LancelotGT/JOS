@@ -6,7 +6,7 @@ static struct tx_desc tx_descs[NTDESC];
 static char tx_packets[MAXPKTLEN * NTDESC];
 
 static struct rx_desc rx_descs[NRDESC];
-static char rx_packets[MAXPKTLEN*NRDESC];
+static char rx_packets[NRDESC];
 
 // LAB 6: Your driver code here
 int e1000_attach(struct pci_func *pcif)
@@ -32,7 +32,7 @@ int e1000_attach(struct pci_func *pcif)
 
     // perform receive initialization
     e1000[E1000_RAL] = 0x12005452; // hardcoded 52:54:00:12:34:56
-    e1000[E1000_RAH] = 0x00005634; // hardcoded 52:54:00:12:34:56
+    e1000[E1000_RAH] = 0x00005634 | E1000_RAH_AV; // hardcoded 52:54:00:12:34:56
     e1000[E1000_RDBAL] = PADDR(rx_descs);
     e1000[E1000_RDLEN] = sizeof(rx_descs);
     e1000[E1000_RDH] = 0;
@@ -43,6 +43,8 @@ int e1000_attach(struct pci_func *pcif)
     e1000[E1000_RCTL] |= E1000_RCTL_RDMTS_HALF;
     e1000[E1000_RCTL] |= E1000_RCTL_MO_0;
     e1000[E1000_RCTL] |= E1000_RCTL_BAM;
+    e1000[E1000_RCTL] |= E1000_RCTL_BSEX;
+    e1000[E1000_RCTL] |= E1000_RCTL_SZ_4096; // ? this could be different, just chose one
     /* TODO: Size of receive buffers? Does it need to be over 2048 bytes?
     Configure the Receive Buffer Size (RCTL.BSIZE) bits to reflect the size of the receive buffers
     software provides to hardware. Also configure the Buffer Extension Size (RCTL.BSEX) bits if
