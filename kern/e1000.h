@@ -26,6 +26,7 @@
 #define E1000_TCTL_MULR   0x10000000    /* Multiple request support */
 
 #define E1000_TXD_CMD_RS  0x08 /* Transmit Desc Report Status */
+#define E1000_TXD_CMD_EOP  0x01 /* Transmit Desc End of Packet */
 #define E1000_TXD_STA_DD  0x1 /* Transmit Desc Status DD field */
 
 #define E1000_TCTL_CT_INIT 0x00000010    /* initial collision threshold */

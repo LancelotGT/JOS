@@ -35,6 +35,9 @@ int e1000_attach(struct pci_func *pcif)
 
     // test for transmitting packets in kernel space
     int int_packet[200];
+
+    for (i = 0; i < 200; i++)
+        int_packet[i] = i;
     for (i = 0; i < 5 * NTDESC; i++)
         e1000_tx(&int_packet, 4 * 200);
     return 0;
@@ -53,6 +56,7 @@ int e1000_tx(void* addr, uint16_t length) {
     memmove(KADDR(tx_descs[tail].addr), addr, length);
     tx_descs[tail].length = length;
     tx_descs[tail].status &= ~E1000_TXD_STA_DD; 
+    tx_descs[tail].cmd |= E1000_TXD_CMD_EOP;
     e1000[E1000_TDT] = (tail + 1) % NTDESC;
     return 0;
 }
