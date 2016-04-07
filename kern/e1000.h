@@ -64,6 +64,7 @@ volatile uint32_t *e1000;
 
 int e1000_attach(struct pci_func *pcif);
 int e1000_tx(void* addr, uint16_t length);
+int e1000_rx(); // TODO: add function args
 
 struct tx_desc
 {

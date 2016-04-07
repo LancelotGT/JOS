@@ -445,6 +445,13 @@ sys_e1000_tx(void *s, size_t len)
   return e1000_tx((void*)s, len);
 } 
 
+// Receives a packet from specified address
+static int
+sys_e1000_rx(void *addr)
+{
+  user_mem_assert(curenv, addr, MAXPKTLEN, PTE_U); // TODO: is MaxPKTLEN the right arg?
+  return e1000_rx(addr);
+}
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -490,6 +497,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
     return sys_time_msec();
   case SYS_e1000_tx:
     return sys_e1000_tx((void*)a1, a2);
+  case SYS_e1000_rx:
+    return sys_e1000_rx((void*) a1);
   default:
     return -E_INVAL;
   }

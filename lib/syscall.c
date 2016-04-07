@@ -132,3 +132,9 @@ sys_e1000_tx(void *s, size_t len)
 {
   return syscall(SYS_e1000_tx, 0, (uint32_t)s, len, 0, 0, 0);
 } 
+
+int
+sys_e1000_rx(void *addr)
+{
+  return syscall(SYS_e1000_rx, 0, (uint32_t)addr, 0, 0, 0, 0);
+}

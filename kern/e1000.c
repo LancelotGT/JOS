@@ -92,3 +92,8 @@ int e1000_tx(void* addr, uint16_t length) {
     e1000[E1000_TDT] = (tail + 1) % NTDESC;
     return 0;
 }
+
+int e1000_rx() {
+    // TODO
+    return -1;
+}
