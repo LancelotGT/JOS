@@ -5,12 +5,31 @@
 #include <kern/pci.h>
 
 #define E1000_STATUS 0x00008 / 4 // 4 byte register starting at 8th byte of reg space
+
 #define E1000_TDBAL 0x03800 / 4  /* TX Descriptor Base Address Low - RW */
 #define E1000_TDLEN    0x03808 / 4  /* TX Descriptor Length - RW */ 
 #define E1000_TDH      0x03810 / 4  /* TX Descriptor Head - RW */
-#define E1000_TDT      0x03818 / 4  /* TX Descripotr Tail - RW */ 
+#define E1000_TDT      0x03818 / 4  /* TX Descriptor Tail - RW */ 
 #define E1000_TCTL     0x00400 / 4  /* TX Control - RW */
 #define E1000_TIPG     0x00410 / 4  /* Transmit IPG Register */
+
+#define E1000_RCTL     0x00100 / 4  /* RX Control - RW */
+#define E1000_RDBAL    0x02800 / 4  /* RX Descriptor Base Address Low - RW */
+#define E1000_RDLEN    0x02808 / 4  /* RX Descriptor Length - RW */
+#define E1000_RDH      0x02810 / 4  /* RX Descriptor Head - RW */
+#define E1000_RDT      0x02818 / 4  /* RX Descriptor Tail - RW */
+#define E1000_RA       0x05400 / 4  /* Receive Address - RW Array */
+#define E1000_RAL      0x05400 / 4  /* Receive Address Low - RW */
+#define E1000_RAH      0x05404 / 4  /* Receive Address HIGH - RW */
+
+/* Receive Control Registers */
+#define E1000_RCTL_EN			0x00000002    /* enable */
+#define E1000_RCTL_LPE			0x00000020    /* long packet enable */ // do we need this?
+#define E1000_RCTL_LBM_NO		0x00000000    /* no loopback mode */
+#define E1000_RCTL_RDMTS_HALF	0x00000000    /* rx desc min threshold size */
+#define E1000_RCTL_MO_0			0x00000000    /* multicast offset 11:0 */
+#define E1000_RCTL_BAM			0x00008000    /* broadcast enable */
+#define E1000_RCTL_SECRC		0x04000000    /* Strip Ethernet CRC */
 
 /* Transmit Control Registers */
 #define E1000_TCTL_RST    0x00000001    /* software reset */
@@ -33,7 +52,10 @@
 #define E1000_TCTL_COLD_INIT 0x00040000    /* initial collision distance */
 #define E1000_TIPG_INIT 0x0060200a /* init values for TIPG in 13.4.34 */
 
+
+
 #define NTDESC 32 // the number of the transmit descriptors, somehow arbitrary
+#define NRDESC 128 // the number of receive descriptors, EX10 claims at least 128?
 #define MAXPKTLEN 1518
 
 volatile uint32_t *e1000;
@@ -50,6 +72,17 @@ struct tx_desc
     uint8_t status;
     uint8_t css;
     uint16_t special;
+} __attribute__ ((packed));
+
+struct rx_desc
+{
+    uint64_t addr;
+    uint16_t length;
+    uint8_t cso;
+    uint8_t cmd;
+    uint8_t status;
+    uint8_t css;
+    uint16_t special;	
 } __attribute__ ((packed));
 
 #endif	// JOS_KERN_E1000_H

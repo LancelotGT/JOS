@@ -5,6 +5,9 @@
 static struct tx_desc tx_descs[NTDESC];
 static char tx_packets[MAXPKTLEN * NTDESC];
 
+static struct rx_desc rx_descs[NRDESC];
+static char rx_packets[MAXPKTLEN*NRDESC];
+
 // LAB 6: Your driver code here
 int e1000_attach(struct pci_func *pcif)
 {
@@ -27,13 +30,36 @@ int e1000_attach(struct pci_func *pcif)
     e1000[E1000_TCTL] |= E1000_TCTL_COLD_INIT;
     e1000[E1000_TIPG] |= E1000_TIPG_INIT;
 
+    // perform receive initialization
+    e1000[E1000_RAL] = 0x12005452; // hardcoded 52:54:00:12:34:56
+    e1000[E1000_RAH] = 0x00005634; // hardcoded 52:54:00:12:34:56
+    e1000[E1000_RDBAL] = PADDR(rx_descs);
+    e1000[E1000_RDLEN] = sizeof(rx_descs);
+    e1000[E1000_RDH] = 0;
+    e1000[E1000_RDT] = NRDESC;
+    e1000[E1000_RCTL] |= E1000_RCTL_EN;
+    e1000[E1000_RCTL] |= (!E1000_RCTL_LPE);
+    e1000[E1000_RCTL] |= E1000_RCTL_LBM_NO;
+    e1000[E1000_RCTL] |= E1000_RCTL_RDMTS_HALF;
+    e1000[E1000_RCTL] |= E1000_RCTL_MO_0;
+    e1000[E1000_RCTL] |= E1000_RCTL_BAM;
+    /* TODO: Size of receive buffers? Does it need to be over 2048 bytes?
+    Configure the Receive Buffer Size (RCTL.BSIZE) bits to reflect the size of the receive buffers
+    software provides to hardware. Also configure the Buffer Extension Size (RCTL.BSEX) bits if
+    receive buffer needs to be larger than 2048 bytes */
+
+    e1000[E1000_RCTL] |= E1000_RCTL_SECRC;
+
     // init transmit descriptors
     for (i = 0; i < NTDESC; i++) {
         tx_descs[i].addr = PADDR(&tx_packets[i * MAXPKTLEN]);
         tx_descs[i].cmd |= E1000_TXD_CMD_RS;
         tx_descs[i].status |= E1000_TXD_STA_DD;
     }
-
+    for (i = 0; i < NRDESC; i++){
+        rx_descs[i].addr = PADDR(&rx_packets[i * MAXPKTLEN]);
+        // rx_descs[i].cmd |= E1000_RXD_CMD_RS;
+    }
     // test for transmitting packets in kernel space
     //int int_packet[200];
 
