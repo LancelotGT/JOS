@@ -18,4 +18,5 @@ umain(int argc, char **argv)
   }
   if (!nflag)
     write(1, "\n", 1);
+  cprintf("i am environment %08x\n", thisenv->env_id); 
 }
