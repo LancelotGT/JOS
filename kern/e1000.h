@@ -50,6 +50,8 @@
 #define E1000_TXD_CMD_EOP  0x01 /* Transmit Desc End of Packet */
 #define E1000_TXD_STA_DD  0x1 /* Transmit Desc Status DD field */
 
+#define E1000_RXD_STA_DD 0x01
+
 #define E1000_TCTL_CT_INIT 0x00000010    /* initial collision threshold */
 #define E1000_TCTL_COLD_INIT 0x00040000    /* initial collision distance */
 #define E1000_TIPG_INIT 0x0060200a /* init values for TIPG in 13.4.34 */
@@ -64,7 +66,7 @@ volatile uint32_t *e1000;
 
 int e1000_attach(struct pci_func *pcif);
 int e1000_tx(void* addr, uint16_t length);
-int e1000_rx(); // TODO: add function args
+int e1000_rx(void* data); // TODO: add function args
 
 struct tx_desc
 {

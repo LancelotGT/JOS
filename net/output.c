@@ -19,6 +19,7 @@ output(envid_t ns_envid)
   //	- send the packet to the device driver
   while(1) {
       req = ipc_recv((int32_t*)&whom, (void*)REQVA, &perm);
+//      req = ipc_recv((int32_t*)&whom, &nsipcbuf, &perm);
       if (debug)
           cprintf("ns req %d from %08x [page %08x]\n",
                   req, whom, uvpt[PGNUM(REQVA)]); 
@@ -35,6 +36,7 @@ output(envid_t ns_envid)
       pg = NULL;
       if (req == NSREQ_OUTPUT) {
           r = sys_e1000_tx(pkt->jp_data, pkt->jp_len);
+//          r = sys_e1000_tx(nsipcbuf.pkt.jp_data, nsipcbuf.pkt.jp_len);
           if (r < 0)
               cprintf("e1000 output request failed\n");
       } else {

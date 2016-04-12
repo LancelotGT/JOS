@@ -6,7 +6,7 @@ static struct tx_desc tx_descs[NTDESC];
 static char tx_packets[MAXPKTLEN * NTDESC];
 
 static struct rx_desc rx_descs[NRDESC];
-static char rx_packets[NRDESC];
+static char rx_packets[MAXPKTLEN * NRDESC];
 
 // LAB 6: Your driver code here
 int e1000_attach(struct pci_func *pcif)
@@ -60,7 +60,7 @@ int e1000_attach(struct pci_func *pcif)
     }
     for (i = 0; i < NRDESC; i++){
         rx_descs[i].addr = PADDR(&rx_packets[i * MAXPKTLEN]);
-        // rx_descs[i].cmd |= E1000_RXD_CMD_RS;
+        rx_descs[i].status |= E1000_RXD_STA_DD;
     }
     // test for transmitting packets in kernel space
     //int int_packet[200];
@@ -77,7 +77,8 @@ int e1000_tx(void* addr, uint16_t length) {
 
     if (length > MAXPKTLEN)
         return -E_INVAL;
-
+    cprintf("transmit tail: %0x\n", tail);
+    cprintf("transmit tail status %0x\n", tx_descs[tail].status);
     if (!(tx_descs[tail].status & E1000_TXD_STA_DD)) {
         // if the dd field is not set, the desc is not free
         // we simply drop the packet in this case
@@ -93,7 +94,22 @@ int e1000_tx(void* addr, uint16_t length) {
     return 0;
 }
 
-int e1000_rx() {
+int e1000_rx(void* data) {
     // TODO
-    return -1;
+    static int tail = 0;
+    cprintf("receive tail: %0x\n", tail);
+    cprintf("receive tail status: %0x\n",rx_descs[tail].status);
+    if (!(rx_descs[tail].status & E1000_RXD_STA_DD)) {
+        cprintf("Receiving queue is empty\n");
+        return -1;
+    }
+    uint16_t length = rx_descs[tail].length;
+    if (length > MAXPKTLEN)
+        return -E_INVAL;
+    memmove(data, KADDR(rx_descs[tail].addr),length);
+    rx_descs[tail].status &= ~E1000_RXD_STA_DD;
+//    rx_descs[tail].status = 0;
+//    rx_descs[tail].cmd |= E1000_RXD_CMD_EOP;
+    tail = (tail + 1) % NRDESC;
+    return length;
 }
