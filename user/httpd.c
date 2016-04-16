@@ -236,8 +236,10 @@ send_file(struct http_request *req)
     goto end;
   }
 
-  if ((r = fstat(fd, &stat)) < 0)
-    goto end;
+  if ((r = fstat(fd, &stat)) < 0) {
+      send_error(req, 404);
+      goto end;
+  }
 
   if (stat.st_isdir) {
     send_error(req, 404);
