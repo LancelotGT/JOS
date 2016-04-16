@@ -9,7 +9,7 @@ output(envid_t ns_envid)
 {
   binaryname = "ns_output";
   int r, perm;
-  uint32_t req; 
+  uint32_t req;
   int32_t whom;
   void* pg;
   struct jif_pkt *pkt = (struct jif_pkt*)REQVA;
@@ -19,11 +19,10 @@ output(envid_t ns_envid)
   //	- send the packet to the device driver
   while(1) {
       req = ipc_recv((int32_t*)&whom, (void*)REQVA, &perm);
-//      req = ipc_recv((int32_t*)&whom, &nsipcbuf, &perm);
       if (debug)
           cprintf("ns req %d from %08x [page %08x]\n",
-                  req, whom, uvpt[PGNUM(REQVA)]); 
-      
+                  req, whom, uvpt[PGNUM(REQVA)]);
+
       assert(whom == ns_envid);
 
       // All requests must contain an argument page
@@ -31,12 +30,11 @@ output(envid_t ns_envid)
           cprintf("Invalid request from %08x: no argument page\n",
                   whom);
           continue; // just leave it hanging...
-      } 
+      }
 
       pg = NULL;
       if (req == NSREQ_OUTPUT) {
           r = sys_e1000_tx(pkt->jp_data, pkt->jp_len);
-//          r = sys_e1000_tx(nsipcbuf.pkt.jp_data, nsipcbuf.pkt.jp_len);
           if (r < 0)
               cprintf("e1000 output request failed\n");
       } else {

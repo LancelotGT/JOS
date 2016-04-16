@@ -24,15 +24,17 @@
 
 /* Receive Control Registers */
 #define E1000_RCTL_EN			0x00000002    /* enable */
-#define E1000_RCTL_LPE			0x00000020    /* long packet enable */ // do we need this?
+#define E1000_RCTL_LPE			0x00000020    /* long packet enable */
 #define E1000_RCTL_LBM_NO		0x00000000    /* no loopback mode */
 #define E1000_RCTL_RDMTS_HALF	0x00000000    /* rx desc min threshold size */
 #define E1000_RCTL_MO_0			0x00000000    /* multicast offset 11:0 */
 #define E1000_RCTL_BAM			0x00008000    /* broadcast enable */
 #define E1000_RCTL_SECRC		0x04000000    /* Strip Ethernet CRC */
 #define E1000_RCTL_BSEX			0x02000000    /* Buffer size extension */
+#define E1000_RCTL_SZ_2048      0x00000000    /* rx buffer size 2048 */
 #define E1000_RCTL_SZ_4096      0x00030000    /* rx buffer size 4096 */
 #define E1000_RAH_AV			0x80000000    /* Receive descriptor valid */
+
 /* Transmit Control Registers */
 #define E1000_TCTL_RST    0x00000001    /* software reset */
 #define E1000_TCTL_EN     0x00000002    /* enable tx */
@@ -47,14 +49,16 @@
 #define E1000_TCTL_MULR   0x10000000    /* Multiple request support */
 
 #define E1000_TXD_CMD_RS  0x08 /* Transmit Desc Report Status */
-#define E1000_TXD_CMD_EOP  0x01 /* Transmit Desc End of Packet */
+#define E1000_TXD_CMD_EOP 0x01 /* Transmit Desc End of Packet */
 #define E1000_TXD_STA_DD  0x1 /* Transmit Desc Status DD field */
 
-#define E1000_RXD_STA_DD 0x01
+#define E1000_RXD_STA_DD       0x01    /* Descriptor Done */
+#define E1000_RXD_STA_EOP      0x02    /* End of Packet */
+#define E1000_RXD_STA_IXSM     0x04    /* Ignore Checksum Indication */
 
-#define E1000_TCTL_CT_INIT 0x00000010    /* initial collision threshold */
+#define E1000_TCTL_CT_INIT   0x00000010    /* initial collision threshold */
 #define E1000_TCTL_COLD_INIT 0x00040000    /* initial collision distance */
-#define E1000_TIPG_INIT 0x0060200a /* init values for TIPG in 13.4.34 */
+#define E1000_TIPG_INIT      0x0060200a /* init values for TIPG in 13.4.34 */
 
 
 
@@ -66,7 +70,7 @@ volatile uint32_t *e1000;
 
 int e1000_attach(struct pci_func *pcif);
 int e1000_tx(void* addr, uint16_t length);
-int e1000_rx(void* data); // TODO: add function args
+int e1000_rx(void* addr);
 
 struct tx_desc
 {
@@ -83,11 +87,10 @@ struct rx_desc
 {
     uint64_t addr;
     uint16_t length;
-    uint8_t cso;
-    uint8_t cmd;
+    uint16_t cso;
     uint8_t status;
-    uint8_t css;
-    uint16_t special;	
+    uint8_t errs;
+    uint16_t special;
 } __attribute__ ((packed));
 
 #endif	// JOS_KERN_E1000_H

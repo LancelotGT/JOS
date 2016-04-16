@@ -449,9 +449,11 @@ sys_e1000_tx(void *s, size_t len)
 static int
 sys_e1000_rx(void *addr)
 {
-  user_mem_assert(curenv, addr, MAXPKTLEN, PTE_U); // TODO: is MaxPKTLEN the right arg?
+  // user cannot receive the packet to read-only memory
+  user_mem_assert(curenv, addr, 0, PTE_U | PTE_P | PTE_W);
   return e1000_rx(addr);
 }
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
