@@ -10,7 +10,7 @@
 // network packets and using sockets to transfer packets and
 // get results back. Currently only supports TCP/IP.
 
-#define BUFFSIZE 32 
+#define BUFFSIZE 32
 static int sock = -1;
 static struct sockaddr_in rpcserver;
 
@@ -30,7 +30,7 @@ int rpc_client_init(char* ipaddr, uint16_t port)
     // Construct the server sockaddr_in structure
     memset(&rpcserver, 0, sizeof(rpcserver));             // Clear struct
     rpcserver.sin_family = AF_INET;                        // Internet/IP
-    rpcserver.sin_addr.s_addr = htonl(ipaddr);         // IP address
+    rpcserver.sin_addr.s_addr = inet_addr(ipaddr);         // IP address
     rpcserver.sin_port = htons(port);                      // server port
     return 0;
 }
@@ -44,7 +44,7 @@ int rpc_client(void* res, int a1, int a2)
     if (connect(sock, (struct sockaddr *)&rpcserver, sizeof(rpcserver)) < 0)
         return -E_NO_CONN;
 
-    cprintf("connected to RPC server\n"); 
+    cprintf("connected to RPC server\n");
 
     // formulate the rpc packet
     struct rpc_pkt pkt;
@@ -75,7 +75,7 @@ int rpc_client(void* res, int a1, int a2)
     buffer[received] = '\0';
     memcpy(res, buffer, BUFFSIZE);
 
-    close(sock); 
+    close(sock);
     sock = -1;
     return 0;
 }

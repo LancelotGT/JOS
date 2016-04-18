@@ -42,7 +42,7 @@ int rpc_server_init(uint16_t port)
     rpcserver.sin_addr.s_addr = htonl(INADDR_ANY);         // IP address
     rpcserver.sin_port = htons(port);                      // server port
 
-    cprintf("trying to bind\n");
+    cprintf("trying to bind port %d\n", port);
 
     // Bind the server socket
     if (bind(serversock, (struct sockaddr *)&rpcserver,
@@ -67,7 +67,7 @@ void rpc_server(serve_function serve)
     struct sockaddr_in rpcclient;
     struct rpc_pkt pkt;
     int i, len, clientsock = -1;
-    int args[MAXARGS];
+    int args[RPCMAXARGS];
     char buff[BUFFSIZE];
     int received = -1;
     int r;
@@ -81,8 +81,6 @@ void rpc_server(serve_function serve)
                         &clientlen)) < 0) {
             die("Failed to accept client connection");
         }
-
-        cprintf("Client connected: %s\n", inet_ntoa(rpcclient.sin_addr));
 
         // Read RPC message
         if ((received = read(clientsock, &pkt, PKTLEN)) < 0) {
@@ -103,8 +101,6 @@ void rpc_server(serve_function serve)
             close(clientsock);
             die("Failed to get results\n");
         };
-
-        cprintf("Server results: %s\n", buff);
 
         // Finished processing. buff should store the results now
         len = strlen(buff);
