@@ -3,8 +3,8 @@
 #include <lwip/inet.h>
 
 #define BUFFSIZE 32
-#define IPADDR "10.0.2.15"
-#define PORT 10000
+#define IPADDR "10.0.2.2"
+#define PORT 27001
 
 const char *msg = "Hello world!\n";
 
