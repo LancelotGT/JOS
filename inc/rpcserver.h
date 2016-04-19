@@ -69,6 +69,7 @@ void rpc_server(serve_function serve)
     int i, len, clientsock = -1;
     int args[RPCMAXARGS];
     char buff[BUFFSIZE];
+    char strbuff[BUFFSIZE * RPCMAXARGS];
     int received = -1;
     int r;
 
@@ -88,16 +89,39 @@ void rpc_server(serve_function serve)
             die("Failed to receive initial bytes from client");
         }
 
-        for (i = 0; i < pkt.num; i++)
-            args[i] = ((int*)pkt.data)[i];
+        for (i = 0; i < RPCMAXARGS; i++)
+            args[i] = 0;
+
+        len = 0;
+        for (i = 0; i < pkt.num; i++) {
+            if (pkt.types[i] == INT) {
+                args[i] = *(int*)(pkt.data + len);
+                len += sizeof(int);
+            } else if (pkt.types[i] == CHAR) {
+                args[i] = *(pkt.data + len);
+                len += sizeof(char);
+            } else if (pkt.types[i] == STRING) {
+                strcpy(strbuff + i * BUFFSIZE, pkt.data + len);
+                args[i] = (int)(strbuff + i * BUFFSIZE);
+                len += strlen(pkt.data + len);
+            }
+        }
 
         cprintf("Server receive packet: ");
-        for (i = 0; i < pkt.num; i++)
-            cprintf("%d ", args[i]);
+        for (i = 0; i < pkt.num; i++) {
+            switch(pkt.types[i]) {
+            case STRING:
+                cprintf("%s ", args[i]);
+                break;
+            default:
+                cprintf("%d ", args[i]);
+            }
+        }
         cprintf("\n");
 
-        // Assume only two args for now
-        if((r = (*serve)(buff, args[0], args[1])) < 0) {
+        // Call the actual server function
+        if((r = (*serve)(buff, args[0], args[1], args[2], args[3],
+                         args[4], args[5])) < 0) {
             close(clientsock);
             die("Failed to get results\n");
         };

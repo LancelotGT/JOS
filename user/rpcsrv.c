@@ -7,7 +7,7 @@
 // The RPC server binds to the port 8080 of JOS.
 // This port is forwarded as port 26003 of the host OS.
 #define PORT 8080
-#define NBUCKETS 100
+#define NBUCKETS 20
 #define BUFFSIZE 32
 
 struct list_node {
@@ -17,7 +17,7 @@ struct list_node {
 
 static struct list_node* table[NBUCKETS];
 
-int proc(void* res, int key, int value)
+int proc(void* res, int key, int value, int a3, int a4, int a5, int a6)
 {
     int i;
     struct list_node* l = table[key % NBUCKETS];
@@ -26,10 +26,10 @@ int proc(void* res, int key, int value)
     // as needed
     if (!l) {
         l = malloc(sizeof(struct list_node));
-        table[key % NBUCKETS] = l; 
+        table[key % NBUCKETS] = l;
     } else {
         while (l->next != NULL)
-            l = l->next; 
+            l = l->next;
         l->next = malloc(sizeof(struct list_node));
         l = l->next;
     }
@@ -43,12 +43,12 @@ int proc(void* res, int key, int value)
         l = table[i];
         cprintf("index: %d values:", i);
         if (!l) {
-            cprintf("empty\n"); 
+            cprintf("empty\n");
             continue;
         }
-            
+
         while (l) {
-            cprintf(" %d", l->val);   
+            cprintf(" %d", l->val);
             l = l->next;
         }
         cprintf("\n");

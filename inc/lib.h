@@ -145,14 +145,6 @@ int     pipeisclosed(int pipefd);
 // wait.c
 void    wait(envid_t env);
 
-// rpcclient.c
-int rpc_client_init(char* ipaddr, uint16_t port);
-int rpc_client(void* res, int a1, int a2);
-
-// rpcserver.c
-int rpc_server_init(uint16_t port);
-void rpc_server(serve_function serve);
-
 /* File open modes */
 #define O_RDONLY        0x0000          /* open for reading only */
 #define O_WRONLY        0x0001          /* open for writing only */
