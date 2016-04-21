@@ -4,6 +4,7 @@
 #include <inc/error.h>
 #include <inc/string.h>
 #include <inc/assert.h>
+#include <inc/elf.h>
 
 #include <kern/env.h>
 #include <kern/pmap.h>
@@ -312,6 +313,89 @@ sys_page_unmap(envid_t envid, void *va)
   return 0;
 }
 
+// Implement the UNIX-style exec
+// set the code segments using binary for current environment
+// and re-initialize the stack using argv. Then sets up the initial
+// eip and esp, then call sched-yield()
+static int
+sys_exec(void* binary, const char **argv)
+{
+  struct Elf *elfhdr = (struct Elf*)binary;
+  struct Proghdr *ph, *eph;
+
+  size_t string_size;
+  int argc, i, r;
+  char *string_store;
+  uintptr_t *argv_store;
+  uintptr_t init_esp;
+  char argv_buf[100];
+  char* p = argv_buf;
+
+  if (elfhdr->e_magic != ELF_MAGIC)
+      return -E_NOT_EXEC;
+
+  ph = (struct Proghdr *)(binary + elfhdr->e_phoff);
+  eph = ph + elfhdr->e_phnum;
+
+  for (; ph < eph; ph++) {
+    if (ph->p_type == ELF_PROG_LOAD) {
+      // allocate pages for [ph->va, ph->va + ph->memsz)
+      region_alloc(curenv, (void*)ph->p_va, ph->p_memsz);
+
+      // copy filesz to va and zero out the rest memsz - filesz
+      memcpy((void*)ph->p_va, binary + ph->p_offset, ph->p_filesz);
+      memset((void*)(ph->p_va + ph->p_filesz), 0, ph->p_memsz - ph->p_filesz);
+    }
+  }
+
+
+  // Count the number of arguments (argc)
+  // and the total amount of space needed for strings (string_size).
+  string_size = 0;
+  for (argc = 0; argv[argc] != 0; argc++) {
+     strcpy(argv_buf + string_size, argv[argc]);
+     string_size += strlen(argv[argc]) + 1;
+     argv_buf[string_size - 1] = '\0';
+  }
+
+  // Determine where to place the strings and the argv array.
+  // Set up pointers into the temporary page 'UTEMP'; we'll map a page
+  // there later, then remap that page into the child environment
+  // at (USTACKTOP - PGSIZE).
+  // strings is the topmost thing on the stack.
+  string_store = (char*)USTACKTOP - string_size;
+  // argv is below that.  There's one argument pointer per argument, plus
+  // a null pointer.
+  argv_store = (uintptr_t*)(ROUNDDOWN(string_store, 4) - 4 * (argc + 1));
+
+  // Make sure that argv, strings, and the 2 words that hold 'argc'
+  // and 'argv' themselves will all fit in a single stack page.
+  if ((void*)(argv_store - 2) < (void*)USTACKTOP - PGSIZE)
+    return -E_NO_MEM;
+
+  // Copy the argv from kernel buffer p to user stack argv_store
+  for (i = 0; i < argc; i++) {
+    argv_store[i] = (intptr_t)string_store;
+    strcpy(string_store, p);
+    string_store += strlen(p) + 1;
+    p += strlen(p) + 1;
+  }
+  argv_store[argc] = 0;
+  assert(string_store == (char*)USTACKTOP);
+
+  argv_store[-1] = (intptr_t)argv_store;
+  argv_store[-2] = argc;
+
+  init_esp = (intptr_t)&argv_store[-2];
+
+  // set the program entry point
+  curenv->env_tf.tf_eip = elfhdr->e_entry;
+  curenv->env_tf.tf_esp = init_esp;
+  sched_yield();
+  return 0;
+}
+
+
 // Try to send 'value' to the target env 'envid'.
 // If srcva < UTOP, then also send page currently mapped at 'srcva',
 // so that receiver gets a duplicate mapping of the same page.
@@ -488,6 +572,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
     return sys_page_map(a1, (void*)a2, a3, (void*)a4, a5);
   case SYS_page_unmap:
     return sys_page_unmap(a1, (void*)a2);
+  case SYS_exec:
+    return sys_exec((void*)a1, (const char**)a2);
   case SYS_env_set_pgfault_upcall:
     return sys_env_set_pgfault_upcall(a1, (void*)a2);
   case SYS_ipc_try_send:
