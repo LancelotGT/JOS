@@ -14,6 +14,23 @@ enum {
                                 // the maximum allowed
   E_FAULT,                      // Memory fault
 
+  E_IPC_NOT_RECV,               // Attempt to send to env that is not recving
+  E_EOF,                        // Unexpected end of file
+
+  // File system error codes -- only seen in user-level
+  E_NO_DISK,                    // No free space left on disk
+  E_MAX_OPEN,                   // Too many files are open
+  E_NOT_FOUND,                  // File or block not found
+  E_BAD_PATH,                   // Bad path
+  E_FILE_EXISTS,                // File already exists
+  E_NOT_EXEC,                   // File not a valid executable
+  E_NOT_SUPP,                   // Operation not supported
+
+  // network error codes
+  E_NO_RESP,
+  E_NO_CONN,
+  E_BAD_REQ,
+
   MAXERROR
 };
 

@@ -20,8 +20,9 @@ $(OBJDIR)/boot/%.o: boot/%.S
 	$(V)$(CC) -nostdinc $(KERN_CFLAGS) -c -o $@ $<
 
 $(OBJDIR)/boot/main.o: boot/main.c
-	@echo + cc -Os $<
-	$(V)$(CC) -nostdinc $(KERN_CFLAGS) -Os -c -o $(OBJDIR)/boot/main.o boot/main.c
+	@echo + cc -Os -gstabs $<
+	#$(V)$(CC) -nostdinc $(KERN_CFLAGS) -Os -gstabs -c -o $(OBJDIR)/boot/main.o boot/main.c
+	$(V)$(CC) -nostdinc $(KERN_CFLAGS) -gstabs -c -o $(OBJDIR)/boot/main.o boot/main.c
 
 $(OBJDIR)/boot/boot: $(BOOT_OBJS)
 	@echo + ld boot/boot
