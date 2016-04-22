@@ -1,0 +1,45 @@
+# How to compile and run the demo
+
+The demo is a distributed key-value store. To run the demo, we need at least one server JOS instance and one client JOS instance. So we need to copy the entire code directory to another place and use one of them as server and one of them as client.
+
+Since these two instances will have conflicts on the GDBPORT they are using, we need to change line 67 in the Makefile of the client instance to be
+
+```
+GDBPORT := $(shell expr `id -u` % 5000 + 26000)
+```
+
+instead of
+
+```
+GDBPORT := $(shell expr `id -u` % 5000 + 25000)
+```
+
+Then we are ready to run the demo.
+
+To run the demo I showed in class, just type
+
+```
+make run-rpcsrv
+```
+
+in server instance, and then
+
+```
+make run-rpctest
+```
+
+in the client instance. It will prints out exactly what wee saw in the demo.
+
+# A second demo
+
+To address the question from Prof. Kim about the usage of the String data type, I also include another key-value store demo in the code. It uses a string for the value in the key-value pair and it is just 4 lines of code changes from the original demo. To run this demo, just type
+
+```
+make run-rpcstrsrv
+```
+
+in the server instance, and then
+
+```
+make run-rpcstrtest
+```
