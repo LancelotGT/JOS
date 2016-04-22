@@ -97,6 +97,8 @@ KERN_BINFILES +=	user/testtime \
 			user/echotest \
             user/rpcsrv \
             user/rpctest \
+            user/rpcstrsrv \
+            user/rpcstrtest \
 			net/testoutput \
 			net/testinput \
 			net/ns

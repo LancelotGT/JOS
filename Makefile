@@ -63,10 +63,6 @@ QEMU := $(shell if which qemu > /dev/null; \
 	echo "***" 1>&2; exit 1)
 endif
 
-# this won't work machine other than my own
-# change this to your modified version of qemu
-QEMU := /home/vagrant/qemu_install/bin/qemu-system-i386
-
 # try to generate a unique GDB port
 GDBPORT	:= $(shell expr `id -u` % 5000 + 25000)
 
